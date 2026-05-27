@@ -11,54 +11,26 @@ set(VERSION_STR "v1.1")
 # 1. FFmpeg 依賴偵測區（區分 Windows 與 類Unix 系統）
 # ====================================================================
 
-# 這裡使用https://github.com/System233/ffmpeg-msvc-prebuilt/releases/tag/n7.1-241205 編譯的靜態庫
+# Windows/MSVC uses the static FFmpeg package from:
+# https://github.com/System233/ffmpeg-msvc-prebuilt/releases/tag/n7.1-241205
 if(WIN32)
     if(MSVC)
         message(STATUS "Detected Windows Native MSVC environment. Setting up STATIC FFmpeg paths.")
-        
-        # 💡 完美對齊：指向剛才在 YAML 裡改名的 ffmpeg-static 資料夾
+
         set(FFMPEG_WIN_DIR "${CMAKE_SOURCE_DIR}/ffmpeg-static")
-        
-        # 指定 Windows 尋找 .lib 檔的目錄
-        link_directories("${FFMPEG_WIN_DIR}/lib")
-        
-        # 指定原生 Windows MSVC 點名要連結的標準 .lib 靜態導入庫與系統硬體加速庫
-        set(FFMPEG_WIN_LIBS
-            avformat avcodec avutil swscale swresample
-            # 1. FFmpeg 核心五大金剛
-            # "${FFMPEG_WIN_DIR}/lib/libavformat.a"
-            # "${FFMPEG_WIN_DIR}/lib/libavcodec.a"
-            # "${FFMPEG_WIN_DIR}/lib/libavutil.a"
-            # "${FFMPEG_WIN_DIR}/lib/libswscale.a"
-            # "${FFMPEG_WIN_DIR}/lib/libswresample.a"
-            
-            # 2. 視訊與編碼核心依賴
-            # "${FFMPEG_WIN_DIR}/lib/libx264.lib"
-            # "${FFMPEG_WIN_DIR}/lib/x265-static.lib"
-            # "${FFMPEG_WIN_DIR}/lib/vpxmt.lib"
-            
-            # # 3. 圖片核心依賴（WebP 系列與 Zlib 壓縮，精確對齊你的 lib 檔名）
-            # "${FFMPEG_WIN_DIR}/lib/libwebpmux.lib"
-            # "${FFMPEG_WIN_DIR}/lib/libwebpdemux.lib"
-            # "${FFMPEG_WIN_DIR}/lib/libwebp.lib"
-            # "${FFMPEG_WIN_DIR}/lib/libsharpyuv.lib"
-            
-            # # 4. 💡 關鍵：JXL 系列的拓撲順序（jxl 依賴 cms 和 threads，所以 jxl 要排在最前面！）
-            # "${FFMPEG_WIN_DIR}/lib/jxl.lib"
-            # "${FFMPEG_WIN_DIR}/lib/jxl_cms.lib"
-            # "${FFMPEG_WIN_DIR}/lib/jxl_threads.lib"
-            # "${FFMPEG_WIN_DIR}/lib/hwy.lib"
-            
-            # # 5. Brotli 傳輸壓縮系列
-            # "${FFMPEG_WIN_DIR}/lib/brotlienc.lib"
-            # "${FFMPEG_WIN_DIR}/lib/brotlidec.lib"
-            # "${FFMPEG_WIN_DIR}/lib/brotlicommon.lib"
-            
-            # 6. 💡 終極解藥：zlib 必須放在最後面，因為前面所有人（PNG、JXL、FFmpeg）都依賴它！
-            "${FFMPEG_WIN_DIR}/lib/zlib.lib"
-            
-            # 3. Windows 原生系統底層必備庫（ws2_32 負責解決通訊、其餘負責硬體加速與安全）
+
+        if(NOT EXISTS "${FFMPEG_WIN_DIR}/include" OR NOT EXISTS "${FFMPEG_WIN_DIR}/lib")
+            message(FATAL_ERROR "Windows static FFmpeg package not found. Expected include/ and lib/ under: ${FFMPEG_WIN_DIR}")
+        endif()
+
+        file(GLOB FFMPEG_WIN_STATIC_LIBS CONFIGURE_DEPENDS "${FFMPEG_WIN_DIR}/lib/*.lib")
+        if(NOT FFMPEG_WIN_STATIC_LIBS)
+            message(FATAL_ERROR "No FFmpeg static .lib files found in: ${FFMPEG_WIN_DIR}/lib")
+        endif()
+
+        set(FFMPEG_WIN_SYSTEM_LIBS
             ws2_32 Bcrypt Secur32 Strmiids Vfw32 Shlwapi Mfuuid d3d11 dxva2 ole32
+            user32 advapi32 gdi32 shell32
         )
     else()
         message(STATUS "Detected Windows Cross-Compilation (MinGW). Using environment variables.")
@@ -85,14 +57,12 @@ add_executable(ytoncmd ${SOURCES})
 if(WIN32)
     target_compile_definitions(ytoncmd PRIVATE NOMINMAX _CRT_SECURE_NO_WARNINGS)
     if(MSVC)
-        # 2. 物理超渡：直接對 ytoncmd 標靶注入 /MT 參數，強制覆蓋掉 VS 專案中任何殘留的 /MD！
-        target_compile_options(ytoncmd PRIVATE "/MT")
-        
+        set_property(TARGET ytoncmd PROPERTY
+            MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+        )
         set_target_properties(ytoncmd PROPERTIES
             INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE
         )
-        # 3. 告訴連結器：如果看到微軟舊的動態庫預設提示，直接無視它，強推靜態合流
-        # target_link_options(ytoncmd PRIVATE "/NODEFAULTLIB:MSVCRT")
     endif()
 endif()
 
@@ -102,7 +72,7 @@ endif()
 if(WIN32)
     if(MSVC)
         target_include_directories(ytoncmd PRIVATE include third_party "${FFMPEG_WIN_DIR}/include")
-        target_link_libraries(ytoncmd PRIVATE ${FFMPEG_WIN_LIBS})
+        target_link_libraries(ytoncmd PRIVATE ${FFMPEG_WIN_STATIC_LIBS} ${FFMPEG_WIN_SYSTEM_LIBS})
     else()
         target_link_libraries(ytoncmd PRIVATE ${FFMPEG_LIBRARIES})
     endif()
@@ -118,15 +88,6 @@ endif()
 if(WIN32)
     set(WIN_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/build_win/ytoncmd-win-${VERSION_STR}")
     set_target_properties(ytoncmd PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${WIN_OUTPUT_DIR}")
-    
-    set(FFMPEG_BIN_DIR "${CMAKE_SOURCE_DIR}/ffmpeg-8.1.1-full_build-shared/bin")
-    if(EXISTS "${FFMPEG_BIN_DIR}")
-        add_custom_command(TARGET ytoncmd POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E make_directory "${WIN_OUTPUT_DIR}"
-            COMMAND ${CMAKE_COMMAND} -E copy_directory "${FFMPEG_BIN_DIR}" "${WIN_OUTPUT_DIR}"
-            COMMENT "Copying Windows FFmpeg DLLs and executables to output directory..."
-        )
-    endif()
 else()
     if(APPLE)
         set(PLATFORM_NAME "macos")
