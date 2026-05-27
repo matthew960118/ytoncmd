@@ -42,32 +42,35 @@ jobs:
       if: matrix.os == 'windows-latest'
       shell: pwsh
       run: |
-        Write-Host "Downloading FFmpeg Windows Static Build..."
-        # 💡 這是 GyanD 官方永久不變的最新釋出靜態庫網址！
+        Write-Host "Downloading FFmpeg 8.1.1 Windows Static Build..."
+        # 💡 使用你找到的精確 8.1.1 釋出網址
         $url = "https://github.com/GyanD/codexffmpeg/releases/download/8.1.1/ffmpeg-8.1.1-full_build.zip"
         $output = "ffmpeg.zip"
         
-        # 隱藏進度條，下載速度直接飆升 5 倍
         $ProgressPreference = 'SilentlyContinue'
         
-        Write-Host "Starting download from gyan.dev..."
+        Write-Host "Starting download from GitHub Releases..."
         Invoke-WebRequest -Uri $url -OutFile $output
         Write-Host "✓ Download complete. Extracting files..."
         
-        # 解壓縮到當前目錄
-        Expand-Archive -Path $output -DestinationPath .
+        # 1. 先解壓到一個臨時目錄 temp_ffmpeg 裡
+        Expand-Archive -Path $output -DestinationPath "temp_ffmpeg"
         
-        # 自動捕捉解壓出來的資料夾（名字通常是 ffmpeg-7.x.x-full_build）
-        $extractedDir = Get-ChildItem -Directory -Filter "ffmpeg-*-full_build" | Select-Object -First 1
-        if ($extractedDir) {
-            # 強制改名為我們 CMake 認得的固定名稱：ffmpeg-static
-            Rename-Item -Path $extractedDir.FullName -NewName "ffmpeg-static"
-            Write-Host "✓ Successfully extracted and renamed to ffmpeg-static"
+        # 2. 找到真正帶有 include/lib 的那個內層資料夾
+        $innerDir = Get-ChildItem -Path "temp_ffmpeg" -Directory -Filter "ffmpeg-*-full_build" | Select-Object -First 1
+        
+        if ($innerDir) {
+            # 3. 把內層資料夾裡面的 bin, include, lib 整個移到專案根目錄的 ffmpeg-static 資料夾
+            Move-Item -Path "$($innerDir.FullName)\*" -Destination "." -Force
+            Rename-Item -Path $innerDir.Name -NewName "ffmpeg-static"
+            Write-Host "✓ Successfully extracted and flattened directory to ffmpeg-static"
         } else {
-            Throw "Failed to locate extracted FFmpeg directory!"
+            Throw "Failed to locate inner FFmpeg directory structure!"
         }
         
-        Remove-Item $output
+        # 4. 清理沒用的暫存檔與臨時空目錄
+        Remove-Item $output -Force
+        Remove-Item "temp_ffmpeg" -Recurse -Force
     - name: Install Dependencies (macOS)
       if: matrix.os == 'macos-latest'
       run: |
