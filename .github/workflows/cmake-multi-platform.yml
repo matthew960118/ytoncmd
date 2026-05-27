@@ -40,41 +40,10 @@ jobs:
         sudo apt install -y pkg-config ffmpeg libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libswresample-dev
     - name: Install Dependencies (Windows)
       if: matrix.os == 'windows-latest'
-      shell: pwsh
-      run: |
-        Write-Host "Downloading FFmpeg 8.1.1 Windows Static Build..."
-        $url = "https://github.com/GyanD/codexffmpeg/releases/download/2025-01-23-git-58a129ef93/ffmpeg-2025-01-23-git-58a129ef93-full_build.zip"
-        $output = "ffmpeg.zip"
-        
-        # 💡 終極防禦：強迫 PowerShell 關閉極度吃效能的進度條，避免大檔案下載掛掉
-        $ProgressPreference = 'SilentlyContinue'
-        
-        Write-Host "Starting download via HttpClient (this may take a few seconds)..."
-        # 💡 改用 .NET 原生 HttpClient，記憶體佔用極低，下載大檔案極穩
-        $httpClient = New-Object System.Net.Http.HttpClient
-        $response = $httpClient.GetAsync($url).Result
-        if ($response.IsSuccessStatusCode) {
-            $fileStream = [System.IO.File]::Create($output)
-            $response.Content.CopyToAsync($fileStream).Result
-            $fileStream.Close()
-            Write-Host "✓ Download complete. Extracting files..."
-        } else {
-            Throw "Download failed with status code: $($response.StatusCode)"
-        }
-        
-        # 3. 解壓縮
-        Expand-Archive -Path $output -DestinationPath .
-        
-        # 4. 重新命名
-        $extractedDir = Get-ChildItem -Directory -Filter "ffmpeg-*-full_build" | Select-Object -First 1
-        if ($extractedDir) {
-            Rename-Item -Path $extractedDir.FullName -NewName "ffmpeg-8.1.1-full_build-static"
-            Write-Host "✓ Successfully extracted and renamed to ffmpeg-8.1.1-full_build-static"
-        } else {
-            Throw "Failed to locate extracted FFmpeg directory!"
-        }
-        
-        Remove-Item $output
+      uses: BiniouFF/setup-ffmpeg@v1
+      with:
+        # 💡 強迫抓取包含開發者標頭檔（.h）與靜態庫（.lib）的完全版
+        ffmpeg-version: '7.1'
     - name: Install Dependencies (macOS)
       if: matrix.os == 'macos-latest'
       run: |
