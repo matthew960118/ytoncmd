@@ -42,13 +42,29 @@ jobs:
       if: matrix.os == 'windows-latest'
       shell: pwsh
       run: |
-        Write-Host "Windows build environment detected."
-        Write-Host "Using project-embedded FFmpeg shared package."
-        if (Test-Path "ffmpeg-8.1.1-full_build-shared") {
-            Write-Host "✓ FFmpeg package found in workspace."
+        Write-Host "Downloading FFmpeg 8.1.1 Windows Shared Build..."
+        # 1. 定義下載網址與暫存檔名
+        $url = "https://github.com/GyanD/codexffmpeg/releases/download/2025-01-23-git-58a129ef93/ffmpeg-2025-01-23-git-58a129ef93-full_build-shared.zip"
+        $output = "ffmpeg.zip"
+        
+        # 2. 透過雲端網路下載壓縮包
+        Invoke-WebRequest -Uri $url -OutFile $output
+        Write-Host "✓ Download complete. Extracting files..."
+        
+        # 3. 解壓縮
+        Expand-Archive -Path $output -DestinationPath .
+        
+        # 4. 撈出解壓後長長的資料夾名稱，並強制重新命名為你 CMakeLists.txt 認得的名字
+        $extractedDir = Get-ChildItem -Directory -Filter "ffmpeg-*-full_build-shared" | Select-Object -First 1
+        if ($extractedDir) {
+            Rename-Item -Path $extractedDir.FullName -NewName "ffmpeg-8.1.1-full_build-shared"
+            Write-Host "✓ Successfully extracted and renamed to ffmpeg-8.1.1-full_build-shared"
         } else {
-            Write-Warning "⚠ FFmpeg package NOT found!"
+            Throw "Failed to locate extracted FFmpeg directory!"
         }
+        
+        # 5. 清理下載的 zip 暫存檔，保持雲端空間乾淨
+        Remove-Item $output
     - name: Install Dependencies (macOS)
       if: matrix.os == 'macos-latest'
       run: |
