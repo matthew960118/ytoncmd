@@ -57,7 +57,7 @@ if(WIN32)
             "${FFMPEG_WIN_DIR}/lib/zlib.lib"
             
             # 3. Windows 原生系統底層必備庫（ws2_32 負責解決通訊、其餘負責硬體加速與安全）
-            ws2_32 Bcrypt Secur32 Strmiids Vfw32 Shlwapi Mfuuid
+            ws2_32 Bcrypt Secur32 Strmiids Vfw32 Shlwapi Mfuuid d3d11 dxva2 ole32
         )
     else()
         message(STATUS "Detected Windows Cross-Compilation (MinGW). Using environment variables.")
