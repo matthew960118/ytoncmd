@@ -45,34 +45,23 @@ jobs:
         Write-Host "Downloading FFmpeg 8.1.1 Windows Static Build..."
         $url = "https://github.com/GyanD/codexffmpeg/releases/download/8.1.1/ffmpeg-8.1.1-full_build.zip"
         $output = "ffmpeg.zip"
-        
         $ProgressPreference = 'SilentlyContinue'
         
-        Write-Host "Starting download from GitHub Releases..."
         Invoke-WebRequest -Uri $url -OutFile $output
-        Write-Host "✓ Download complete. Extracting files..."
+        Write-Host "✓ Download complete. Extracting files directly..."
         
-        # 1. 解壓到一個臨時目錄 temp_ffmpeg 裡
-        Expand-Archive -Path $output -DestinationPath "temp_ffmpeg"
+        # 💡 大魔法：直接解壓到專案根目錄下
+        Expand-Archive -Path $output -DestinationPath "."
         
-        # 2. 抓取內層真正的 FFmpeg SDK 目錄
-        $innerDir = Get-ChildItem -Path "temp_ffmpeg" -Directory -Filter "ffmpeg-*-full_build" | Select-Object -First 1
-        
-        if ($innerDir) {
-            # 3. 💡 正確的乾淨邏輯：
-            # 先在臨時目錄裡把內層資料夾改名叫 ffmpeg-static
-            $renamedPath = Rename-Item -Path $innerDir.FullName -NewName "ffmpeg-static" -PassThru
-            
-            # 再把改名後的整個資料夾直接移到專案根目錄下
-            Move-Item -Path $renamedPath.FullName -Destination "." -Force
-            Write-Host "✓ Successfully extracted and established ffmpeg-static directory structure."
+        # 抓取那個長名字的資料夾，直接一秒改名叫 ffmpeg-static，完全不搬移檔案
+        $extractedDir = Get-ChildItem -Directory -Filter "ffmpeg-*-full_build" | Select-Object -First 1
+        if ($extractedDir) {
+            Rename-Item -Path $extractedDir.FullName -NewName "ffmpeg-static" -Force
+            Write-Host "✓ Successfully established ffmpeg-static directory structure."
         } else {
-            Throw "Failed to locate inner FFmpeg directory structure!"
+            Throw "Failed to locate FFmpeg directory structure!"
         }
-        
-        # 4. 清理壓縮包與暫存資料夾
         Remove-Item $output -Force
-        if (Test-Path "temp_ffmpeg") { Remove-Item "temp_ffmpeg" -Recurse -Force }
     - name: Install Dependencies (macOS)
       if: matrix.os == 'macos-latest'
       run: |
