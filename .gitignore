@@ -1,0 +1,14 @@
+[Bb]uild/
+[Bb]uild_*/
+CMakeCache.txt
+CMakeFiles/
+CMakefiles/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+
+ffmpeg-*/
+*.zip
+*.tar.gz
+*.tar.xz
+lib

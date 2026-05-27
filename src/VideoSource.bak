@@ -1,0 +1,124 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include "VideoSource.hpp"
+#include "Color.hpp"
+
+extern "C"
+{
+#include <libavformat/avformat.h>
+#include <libavcodec/avcodec.h>
+#include <libswscale/swscale.h>
+#include <libavutil/imgutils.h>
+}
+
+VideoSource::VideoSource(const std::string &filename, int tw, int th)
+    : target_w(tw), target_h(th)
+{
+
+    // 1. 打開影片檔案
+    if (avformat_open_input(&fmt_ctx, filename.c_str(), NULL, NULL) < 0)
+        return;
+    if (avformat_find_stream_info(fmt_ctx, NULL) < 0)
+        return;
+
+    // 2. 尋找影片流並初始化解碼器
+    for (unsigned int i = 0; i < fmt_ctx->nb_streams; i++)
+    {
+        if (fmt_ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
+        {
+            video_stream_idx = i;
+            break;
+        }
+    }
+
+    const AVCodec *codec = avcodec_find_decoder(fmt_ctx->streams[video_stream_idx]->codecpar->codec_id);
+    codec_ctx = avcodec_alloc_context3(codec);
+    avcodec_parameters_to_context(codec_ctx, fmt_ctx->streams[video_stream_idx]->codecpar);
+    avcodec_open2(codec_ctx, codec, NULL);
+
+    // 3. 計算縮放目標 (含字體比例補償 9/19)
+    float fontW = 9.0f, fontH = 19.0f;
+    int origW = codec_ctx->width;
+    int origH = codec_ctx->height;
+
+    float scaleX = (float)target_w / origW;
+    float scaleY = (float)target_h / (origH * (fontW / fontH));
+    float scale = std::min(scaleX, scaleY);
+
+    newW = (int)(origW * scale);
+    newH = (int)(origH * scale * (fontW / fontH));
+    rgb_buffer.resize(newW * newH * 3);
+    if (video_stream_idx != -1)
+    {
+        AVStream *stream = fmt_ctx->streams[video_stream_idx];
+        if (stream->avg_frame_rate.den != 0)
+        {
+            fps = av_q2d(stream->avg_frame_rate);
+        }
+    }
+
+    offsetX = (target_w - newW) / 2;
+    offsetY = (target_h - newH) / 2;
+
+    // 4. 初始化 SwsContext (一次到位：縮放 + 格式轉換)
+    sws_ctx = sws_getContext(
+        origW, origH, codec_ctx->pix_fmt, // 來源：影片原始尺寸 & 格式
+        newW, newH, AV_PIX_FMT_RGB24,     // 目標：縮放後的尺寸 & RGB
+        SWS_BICUBIC, NULL, NULL, NULL);
+
+    frame = av_frame_alloc();
+    pkt = av_packet_alloc();
+}
+
+// 獲取下一幀並返回填充好的像素矩陣
+bool VideoSource::getNextFrame(std::vector<Color> &canvas)
+{
+    while (av_read_frame(fmt_ctx, pkt) >= 0)
+    {
+        if (pkt->stream_index == video_stream_idx)
+        {
+            if (avcodec_send_packet(codec_ctx, pkt) >= 0)
+            {
+                if (avcodec_receive_frame(codec_ctx, frame) >= 0)
+                {
+
+                    // 準備 RGB 緩衝區
+                    // std::vector<uint8_t> rgb_buffer(newW * newH * 3);
+                    uint8_t *dest[4] = {rgb_buffer.data(), NULL, NULL, NULL};
+                    int dest_linesize[4] = {newW * 3, 0, 0, 0};
+
+                    // 執行 FFmpeg 內建縮放與轉換
+                    sws_scale(sws_ctx, frame->data, frame->linesize, 0, codec_ctx->height, dest, dest_linesize);
+
+                    // 清空畫布並填入置中後的數據
+                    std::fill(canvas.begin(), canvas.end(), Color{0, 0, 0});
+                    for (int y = 0; y < newH; ++y)
+                    {
+                        for (int x = 0; x < newW; ++x)
+                        {
+                            int srcIdx = (y * newW + x) * 3;
+                            int tarIdx = (y + offsetY) * target_w + (x + offsetX);
+                            canvas[tarIdx] = Color(rgb_buffer[srcIdx], rgb_buffer[srcIdx + 1], rgb_buffer[srcIdx + 2]);
+                        }
+                    }
+
+                    av_packet_unref(pkt);
+                    return true; // 成功獲取一影格
+                }
+            }
+        }
+        av_packet_unref(pkt);
+    }
+    return false; // 影片結束
+}
+
+double VideoSource::getFPS() const { return fps; }
+VideoSource::~VideoSource()
+{
+    av_frame_free(&frame);
+    av_packet_free(&pkt);
+    sws_freeContext(sws_ctx);
+    avcodec_free_context(&codec_ctx);
+    avformat_close_input(&fmt_ctx);
+}
