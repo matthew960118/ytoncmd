@@ -9,6 +9,8 @@ set(VERSION_STR "v1.1")
 # ====================================================================
 # 1. FFmpeg 依賴偵測區（區分 Windows 與 類Unix 系統）
 # ====================================================================
+
+# 這裡使用https://github.com/System233/ffmpeg-msvc-prebuilt/releases/tag/n7.1-241205 編譯的靜態庫
 if(WIN32)
     if(MSVC)
         message(STATUS "Detected Windows Native MSVC environment. Setting up STATIC FFmpeg paths.")
@@ -21,7 +23,7 @@ if(WIN32)
         
         # 指定原生 Windows MSVC 點名要連結的標準 .lib 靜態導入庫與系統硬體加速庫
         set(FFMPEG_WIN_LIBS 
-            avformat avcodec avutil swscale swresample
+            libavformat.a libavcodec.a libavutil.a libswscale.a libswresample.a
             Bcrypt Secur32 Strmiids Vfw32 Shlwapi Mfuuid
         )
     else()
