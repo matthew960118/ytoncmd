@@ -1,6 +1,6 @@
 name: CMake Multi-Platform Release Auto-Packager
 
-# 觸發條件：當你建立並發布了一個新的 Release（就是你剛剛點的那個發布）
+# 觸發條件：當你建立並發布了一個新的 Release
 on:
   release:
     types: [published]
@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 這裡擴充成三個平台：Linux、Windows、Mac！
+        # 三個平台同時開工！
         os: [ubuntu-latest, windows-latest, macos-latest]
         include:
           - os: ubuntu-latest
@@ -45,27 +45,29 @@ jobs:
         brew update
         brew install ffmpeg pkg-config cmake
 
-    # 註：Windows 交叉編譯通常依賴你專案內的 ffmpeg 套件包，此處讓 CMake 依據你原本的設定去抓
-
     # ----------------------------------------------------
-    # 配置與編譯區
+    # 配置與編譯區（大魔王修正處）
     # ----------------------------------------------------
     - name: Configure CMake
+      # 💡 關鍵：把 env 移到這裡！讓 CMake 執行時能精準抓到 Mac 的 Homebrew 路徑
+      env:
+        PKG_CONFIG_PATH: /opt/homebrew/lib/pkgconfig:/usr/local/lib/pkgconfig
+        PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
       run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 
     - name: Build Project
       run: cmake --build build --config Release
 
     # ----------------------------------------------------
-    # 自動上傳附件到你的 Release 頁面（大魔法所在！）
+    # 自動上傳附件到你的 Release 頁面
     # ----------------------------------------------------
     - name: Upload Binaries to Release
-      # 只有當你真正發布 Release 時，才會執行這個上傳動作（push 或手動觸發時會跳過）
+      # 只有當你真正發布 Release 時，才會執行這個上傳動作
       if: github.event_name == 'release'
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        # 去 build 資料夾下尋找各平台編譯出的執行檔
+        # 去 build 資料夾下尋找各平台編譯出的執行檔本體
         file: build/**/ytoncmd*
         file_glob: true
         tag: ${{ github.ref }}
