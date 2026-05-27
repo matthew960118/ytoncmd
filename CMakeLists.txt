@@ -91,7 +91,7 @@ if(WIN32)
             INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE
         )
         # 3. 告訴連結器：如果看到微軟舊的動態庫預設提示，直接無視它，強推靜態合流
-        target_link_options(ytoncmd PRIVATE "/NODEFAULTLIB:MSVCRT")
+        # target_link_options(ytoncmd PRIVATE "/NODEFAULTLIB:MSVCRT")
     endif()
 endif()
 

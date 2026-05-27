@@ -39,31 +39,36 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y pkg-config ffmpeg libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libswresample-dev
-    - name: Install Dependencies (Windows)
+    - name: Download Full FFmpeg Shared/Dev package (Windows)
       if: matrix.os == 'windows-latest'
       shell: pwsh
       run: |
-        Write-Host "Downloading True MSVC Static FFmpeg SDK from System233..."
-        # 💡 使用你確認過的完全扁平化靜態包網址
-        $url = "https://github.com/System233/ffmpeg-msvc-prebuilt/releases/download/n7.1-241205/ffmpeg-n7.1-241205-gpl-amd64-static.zip"
-        $output = "ffmpeg.zip"
-        $ProgressPreference = 'SilentlyContinue'
+        Write-Host "=== 開始下載 gyan.dev 全規格開發包 ==="
+        # 建立一個乾淨的暫存夾
+        New-Item -ItemType Directory -Force -Path "./ffmpeg-download"
         
-        # 1. 下載壓縮包
-        Invoke-WebRequest -Uri $url -OutFile $output
-        Write-Host "✓ Download complete. Extracting directly into target folder..."
+        # 使用 gyan.dev 官方最新穩定版（或指定版本，這裡以 release-full-shared 為例）
+        # 註：這包裡面帶有完整的 .lib 導入庫以及全開的軟體解碼器（包含 libdav1d）
+        $url = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-full-shared.7z"
+        Invoke-WebRequest -Uri $url -OutFile "./ffmpeg-download/ffmpeg.7z"
         
-        # 2. 💡 核心大魔法：直接解壓到名為 ffmpeg-static 的新資料夾中！
-        # 這樣一解壓，include、lib 就會直接乖乖躺在裡面，沒有任何套娃層
-        Expand-Archive -Path $output -DestinationPath ".\ffmpeg-static"
+        Write-Host "=== 正在解壓 7z 檔案 ==="
+        # 使用 GitHub 虛擬機內建的 7z 進行解壓
+        7z x "./ffmpeg-download/ffmpeg.7z" -o"./ffmpeg-download" -y
         
-        # 3. 肉眼 Debug 驗證，百分之百確保 include 與 lib 真的躺在這裡
-        Write-Host "=== Verifying ffmpeg-static contents ==="
-        Get-ChildItem -Path ".\ffmpeg-static"
-        Get-ChildItem -Path ".\ffmpeg-static\include\libavformat"
+        # 尋找解壓出來的根目錄名字（它通常長得像 ffmpeg-7.1-full_shared 之類的）
+        $ffmpegDir = Get-ChildItem -Directory -Path "./ffmpeg-download" | Select-Object -First 1
         
-        # 4. 清理壓縮包
-        Remove-Item $output -Force
+        Write-Host "=== 正在將完整版庫檔案對齊至專案 ffmpeg-static 目錄 ==="
+        # 建立你 CMake 點名要的 ffmpeg-static 資料夾
+        New-Item -ItemType Directory -Force -Path "./ffmpeg-static"
+        
+        # 物理複製 include 和 lib 進去，完美覆蓋！
+        Copy-Item -Path "$($ffmpegDir.FullName)/include" -Destination "./ffmpeg-static/include" -Recurse -Force
+        Copy-Item -Path "$($ffmpegDir.FullName)/lib" -Destination "./ffmpeg-static/lib" -Recurse -Force
+        
+        Write-Host "=== 檢查下載成果 ==="
+        Get-ChildItem -Path "./ffmpeg-static/lib"
     - name: Install Dependencies (macOS)
       if: matrix.os == 'macos-latest'
       run: |
