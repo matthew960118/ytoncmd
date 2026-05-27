@@ -97,12 +97,21 @@ jobs:
     # ----------------------------------------------------
     # 自動上傳附件到你的 Release 頁面
     # ----------------------------------------------------
-    - name: Upload Binaries to Release
-      if: github.event_name == 'release'   # 💡 抓到犯人了！
-      uses: svenstaro/upload-release-action@v2
+    # - name: Upload Binaries to Release
+    #   if: github.event_name == 'release'   # 💡 抓到犯人了！
+    #   uses: svenstaro/upload-release-action@v2
+    #   with:
+    #     repo_token: ${{ secrets.GITHUB_TOKEN }}
+    #     file: build/**/ytoncmd* # 💡 還有這裡！
+    #     file_glob: true
+    #     tag: ${{ github.ref }}
+    #     overwrite: true
+    - name: Upload Artifacts for Testing
+      uses: actions/upload-artifact@v4
       with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: build/**/ytoncmd* # 💡 還有這裡！
-        file_glob: true
-        tag: ${{ github.ref }}
-        overwrite: true
+        name: ytoncmd-${{ matrix.os }}
+        path: |
+          build_win/ytoncmd-win-v1.1/Release/ytoncmd.exe
+          build/ytoncmd-macos-v1.1/ytoncmd
+          build/ytoncmd-linux-v1.1/ytoncmd
+        if-no-files-found: ignore
