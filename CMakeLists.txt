@@ -31,18 +31,18 @@ if(WIN32)
             "${FFMPEG_WIN_DIR}/lib/libswresample.a"
             
             # 2. System233 同資料夾附帶的次級依賴靜態庫（解決 133 個未解析錯誤）
-            "${FFMPEG_WIN_DIR}/lib/libx264.a"
-            "${FFMPEG_WIN_DIR}/lib/libx265.a"
-            "${FFMPEG_WIN_DIR}/lib/libz.a"
-            "${FFMPEG_WIN_DIR}/lib/libwebp.a"
-            "${FFMPEG_WIN_DIR}/lib/libjxl.a"
-            "${FFMPEG_WIN_DIR}/lib/libjxl_threads.a"
-            "${FFMPEG_WIN_DIR}/lib/libvpx.a"
-            "${FFMPEG_WIN_DIR}/lib/libsharpyuv.a"
-            "${FFMPEG_WIN_DIR}/lib/libhwy.a"
-            "${FFMPEG_WIN_DIR}/lib/libbrotlicommon.a"
-            "${FFMPEG_WIN_DIR}/lib/libbrotlidec.a"
-            "${FFMPEG_WIN_DIR}/lib/libbrotlienc.a"
+            "${FFMPEG_WIN_DIR}/lib/libx264.lib"
+            "${FFMPEG_WIN_DIR}/lib/x265-static.lib"
+            "${FFMPEG_WIN_DIR}/lib/zlib.lib"
+            "${FFMPEG_WIN_DIR}/lib/libwebp.lib"
+            "${FFMPEG_WIN_DIR}/lib/jxl.lib"
+            "${FFMPEG_WIN_DIR}/lib/jxl_threads.lib"
+            "${FFMPEG_WIN_DIR}/lib/vpx.lib"
+            "${FFMPEG_WIN_DIR}/lib/libsharpyuv.lib"
+            "${FFMPEG_WIN_DIR}/lib/hwy.lib"
+            "${FFMPEG_WIN_DIR}/lib/brotlicommon.lib"
+            "${FFMPEG_WIN_DIR}/lib/brotlidec.lib"
+            "${FFMPEG_WIN_DIR}/lib/brotlienc.lib"
             
             # 3. Windows 原生系統底層必備庫（ws2_32 負責解決通訊、其餘負責硬體加速與安全）
             ws2_32 Bcrypt Secur32 Strmiids Vfw32 Shlwapi Mfuuid
