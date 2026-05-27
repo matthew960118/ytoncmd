@@ -23,8 +23,8 @@ jobs:
         include:
           - os: ubuntu-latest
             artifact_name: ytoncmd-linux
-          - os: macos-latest
-            artifact_name: ytoncmd-macos
+          # - os: macos-latest
+          #   artifact_name: ytoncmd-macos
           - os: windows-latest
             artifact_name: ytoncmd-windows.exe
 
