@@ -51,7 +51,8 @@ jobs:
 
         Write-Host "=== 解壓靜態 FFmpeg 開發包 ==="
         Expand-Archive -Path "./ffmpeg-download/ffmpeg-static.zip" -DestinationPath "./ffmpeg-download" -Force
-        $ffmpegDir = Get-ChildItem -Directory -Path "./ffmpeg-download" -Recurse | Where-Object {
+        $ffmpegRoot = Get-Item -Path "./ffmpeg-download"
+        $ffmpegDir = @($ffmpegRoot) + @(Get-ChildItem -Directory -Path "./ffmpeg-download" -Recurse) | Where-Object {
           (Test-Path (Join-Path $_.FullName "include")) -and (Test-Path (Join-Path $_.FullName "lib"))
         } | Select-Object -First 1
 
