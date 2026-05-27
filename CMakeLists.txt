@@ -23,9 +23,22 @@ if(WIN32)
             message(FATAL_ERROR "Windows static FFmpeg package not found. Expected include/ and lib/ under: ${FFMPEG_WIN_DIR}")
         endif()
 
-        file(GLOB FFMPEG_WIN_STATIC_LIBS CONFIGURE_DEPENDS "${FFMPEG_WIN_DIR}/lib/*.lib")
-        if(NOT FFMPEG_WIN_STATIC_LIBS)
-            message(FATAL_ERROR "No FFmpeg static .lib files found in: ${FFMPEG_WIN_DIR}/lib")
+        set(FFMPEG_WIN_CORE_LIBS
+            "${FFMPEG_WIN_DIR}/lib/libavformat.a"
+            "${FFMPEG_WIN_DIR}/lib/libavcodec.a"
+            "${FFMPEG_WIN_DIR}/lib/libswscale.a"
+            "${FFMPEG_WIN_DIR}/lib/libswresample.a"
+            "${FFMPEG_WIN_DIR}/lib/libavutil.a"
+        )
+        foreach(FFMPEG_WIN_CORE_LIB IN LISTS FFMPEG_WIN_CORE_LIBS)
+            if(NOT EXISTS "${FFMPEG_WIN_CORE_LIB}")
+                message(FATAL_ERROR "Required Windows static FFmpeg core library not found: ${FFMPEG_WIN_CORE_LIB}")
+            endif()
+        endforeach()
+
+        file(GLOB FFMPEG_WIN_DEP_LIBS CONFIGURE_DEPENDS "${FFMPEG_WIN_DIR}/lib/*.lib")
+        if(NOT FFMPEG_WIN_DEP_LIBS)
+            message(FATAL_ERROR "No Windows FFmpeg dependency .lib files found in: ${FFMPEG_WIN_DIR}/lib")
         endif()
 
         set(FFMPEG_WIN_SYSTEM_LIBS
@@ -72,7 +85,7 @@ endif()
 if(WIN32)
     if(MSVC)
         target_include_directories(ytoncmd PRIVATE include third_party "${FFMPEG_WIN_DIR}/include")
-        target_link_libraries(ytoncmd PRIVATE ${FFMPEG_WIN_STATIC_LIBS} ${FFMPEG_WIN_SYSTEM_LIBS})
+        target_link_libraries(ytoncmd PRIVATE ${FFMPEG_WIN_CORE_LIBS} ${FFMPEG_WIN_DEP_LIBS} ${FFMPEG_WIN_SYSTEM_LIBS})
     else()
         target_link_libraries(ytoncmd PRIVATE ${FFMPEG_LIBRARIES})
     endif()
