@@ -82,11 +82,14 @@ endif()
 file(GLOB SOURCES CONFIGURE_DEPENDS "src/*.cpp" "main.cpp")
 add_executable(ytoncmd ${SOURCES})
 if(WIN32)
-    target_compile_definitions(ytoncmd PRIVATE NOMINMAX)
+    target_compile_definitions(ytoncmd PRIVATE NOMINMAX _CRT_SECURE_NO_WARNINGS)
     if(MSVC)
         # 2. 物理超渡：直接對 ytoncmd 標靶注入 /MT 參數，強制覆蓋掉 VS 專案中任何殘留的 /MD！
         target_compile_options(ytoncmd PRIVATE "/MT")
         
+        set_target_properties(ytoncmd PROPERTIES
+            INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE
+        )
         # 3. 告訴連結器：如果看到微軟舊的動態庫預設提示，直接無視它，強推靜態合流
         target_link_options(ytoncmd PRIVATE "/NODEFAULTLIB:MSVCRT")
     endif()
