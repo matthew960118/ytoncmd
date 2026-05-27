@@ -43,34 +43,25 @@ jobs:
       shell: pwsh
       run: |
         Write-Host "Downloading True MSVC Static FFmpeg SDK from System233..."
-        # 💡 使用 System233 專門為 MSVC 編譯的 7.1 靜態開發版
-        $url = "https://github.com/System233/ffmpeg-msvc-prebuilt/releases/download/n7.1-241205/ffmpeg-n7.1-241205-win64-msvc-static-devel.zip"
+        # 💡 使用你確認過的完全扁平化靜態包網址
+        $url = "https://github.com/System233/ffmpeg-msvc-prebuilt/releases/download/n7.1-241205/ffmpeg-n7.1-241205-gpl-amd64-static.zip"
         $output = "ffmpeg.zip"
         $ProgressPreference = 'SilentlyContinue'
         
-        # 1. 下載
+        # 1. 下載壓縮包
         Invoke-WebRequest -Uri $url -OutFile $output
-        Write-Host "✓ Download complete. Extracting..."
+        Write-Host "✓ Download complete. Extracting directly into target folder..."
         
-        # 2. 直接解壓到當前目錄
-        Expand-Archive -Path $output -DestinationPath "."
+        # 2. 💡 核心大魔法：直接解壓到名為 ffmpeg-static 的新資料夾中！
+        # 這樣一解壓，include、lib 就會直接乖乖躺在裡面，沒有任何套娃層
+        Expand-Archive -Path $output -DestinationPath ".\ffmpeg-static"
         
-        # 3. 抓取解壓出來的資料夾（名字通常是 ffmpeg-n7.1-xxx-devel）
-        $extractedDir = Get-ChildItem -Directory -Filter "ffmpeg-n7.1-*" | Select-Object -First 1
-        if ($extractedDir) {
-            # 強制改名成我們 CMakeLists.txt 固定認得的名稱
-            Rename-Item -Path $extractedDir.FullName -NewName "ffmpeg-static" -Force
-            Write-Host "✓ Successfully established ffmpeg-static directory structure."
-        } else {
-            Throw "Failed to locate extracted FFmpeg SDK directory!"
-        }
-        
-        # 4. 肉眼 Debug 驗證，確保這次絕對有 include 資料夾
+        # 3. 肉眼 Debug 驗證，百分之百確保 include 與 lib 真的躺在這裡
         Write-Host "=== Verifying ffmpeg-static contents ==="
         Get-ChildItem -Path ".\ffmpeg-static"
         Get-ChildItem -Path ".\ffmpeg-static\include\libavformat"
         
-        # 5. 清理壓縮包垃圾
+        # 4. 清理壓縮包
         Remove-Item $output -Force
     - name: Install Dependencies (macOS)
       if: matrix.os == 'macos-latest'
