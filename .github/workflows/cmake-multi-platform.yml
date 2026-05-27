@@ -38,7 +38,17 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y pkg-config ffmpeg libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libswresample-dev
-
+    - name: Install Dependencies (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        Write-Host "Windows build environment detected."
+        Write-Host "Using project-embedded FFmpeg shared package."
+        if (Test-Path "ffmpeg-8.1.1-full_build-shared") {
+            Write-Host "✓ FFmpeg package found in workspace."
+        } else {
+            Write-Warning "⚠ FFmpeg package NOT found!"
+        }
     - name: Install Dependencies (macOS)
       if: matrix.os == 'macos-latest'
       run: |
