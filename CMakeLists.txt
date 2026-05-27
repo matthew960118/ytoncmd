@@ -32,7 +32,7 @@ else()
     find_package(PkgConfig REQUIRED)
     
     # 💡 加上 STATIC 關鍵字，強迫 Mac 機器人抓 .a 靜態庫，實現真．獨立單一執行檔
-    pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET STATIC libavformat libavcodec libavutil libswscale libswresample)
+    pkg_check_modules(FFMPEG STATIC REQUIRED IMPORTED_TARGET libavformat libavcodec libavutil libswscale libswresample)
 endif()
 
 # ====================================================================
