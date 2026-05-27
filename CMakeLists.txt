@@ -11,10 +11,19 @@ set(VERSION_STR "v1.1")
 # ====================================================================
 if(WIN32)
     if(MSVC)
-        message(STATUS "Detected Windows Native MSVC environment. Setting up local FFmpeg paths.")
-        set(FFMPEG_WIN_DIR "${CMAKE_SOURCE_DIR}/ffmpeg-8.1.1-full_build-shared")
+        message(STATUS "Detected Windows Native MSVC environment. Setting up STATIC FFmpeg paths.")
+        
+        # 💡 完美對齊：指向剛才在 YAML 裡改名的 ffmpeg-static 資料夾
+        set(FFMPEG_WIN_DIR "${CMAKE_SOURCE_DIR}/ffmpeg-static")
+        
+        # 指定 Windows 尋找 .lib 檔的目錄
         link_directories("${FFMPEG_WIN_DIR}/lib")
-        set(FFMPEG_WIN_LIBS avformat avcodec avutil swscale swresample)
+        
+        # 指定原生 Windows MSVC 點名要連結的標準 .lib 靜態導入庫與系統硬體加速庫
+        set(FFMPEG_WIN_LIBS 
+            avformat avcodec avutil swscale swresample
+            Bcrypt Secur32 Strmiids Vfw32 Shlwapi Mfuuid
+        )
     else()
         message(STATUS "Detected Windows Cross-Compilation (MinGW). Using environment variables.")
         include_directories(include third_party)
