@@ -23,12 +23,29 @@ if(WIN32)
         
         # 指定原生 Windows MSVC 點名要連結的標準 .lib 靜態導入庫與系統硬體加速庫
         set(FFMPEG_WIN_LIBS 
+            # 1. FFmpeg 核心五大金剛
             "${FFMPEG_WIN_DIR}/lib/libavformat.a"
             "${FFMPEG_WIN_DIR}/lib/libavcodec.a"
             "${FFMPEG_WIN_DIR}/lib/libavutil.a"
             "${FFMPEG_WIN_DIR}/lib/libswscale.a"
             "${FFMPEG_WIN_DIR}/lib/libswresample.a"
-            Bcrypt Secur32 Strmiids Vfw32 Shlwapi Mfuuid
+            
+            # 2. System233 同資料夾附帶的次級依賴靜態庫（解決 133 個未解析錯誤）
+            "${FFMPEG_WIN_DIR}/lib/libx264.a"
+            "${FFMPEG_WIN_DIR}/lib/libx265.a"
+            "${FFMPEG_WIN_DIR}/lib/libz.a"
+            "${FFMPEG_WIN_DIR}/lib/libwebp.a"
+            "${FFMPEG_WIN_DIR}/lib/libjxl.a"
+            "${FFMPEG_WIN_DIR}/lib/libjxl_threads.a"
+            "${FFMPEG_WIN_DIR}/lib/libvpx.a"
+            "${FFMPEG_WIN_DIR}/lib/libsharpyuv.a"
+            "${FFMPEG_WIN_DIR}/lib/libhwy.a"
+            "${FFMPEG_WIN_DIR}/lib/libbrotlicommon.a"
+            "${FFMPEG_WIN_DIR}/lib/libbrotlidec.a"
+            "${FFMPEG_WIN_DIR}/lib/libbrotlienc.a"
+            
+            # 3. Windows 原生系統底層必備庫（ws2_32 負責解決通訊、其餘負責硬體加速與安全）
+            ws2_32 Bcrypt Secur32 Strmiids Vfw32 Shlwapi Mfuuid
         )
     else()
         message(STATUS "Detected Windows Cross-Compilation (MinGW). Using environment variables.")
