@@ -97,13 +97,11 @@ jobs:
     # 自動上傳附件到你的 Release 頁面
     # ----------------------------------------------------
     - name: Upload Binaries to Release
-      # 只有當你真正發布 Release 時，才會執行這個上傳動作
-      if: github.event_name == 'release'
+      if: github.event_name == 'release'   # 💡 抓到犯人了！
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        # 去 build 資料夾下尋找各平台編譯出的執行檔本體
-        file: build/**/ytoncmd*
+        file: build/**/ytoncmd* # 💡 還有這裡！
         file_glob: true
         tag: ${{ github.ref }}
         overwrite: true
