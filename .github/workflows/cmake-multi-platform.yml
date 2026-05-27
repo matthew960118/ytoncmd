@@ -48,11 +48,22 @@ jobs:
     # ----------------------------------------------------
     # 配置與編譯區
     # ----------------------------------------------------
-    - name: Configure CMake
-      # 💡 關鍵：把 env 移到這裡！讓 CMake 執行時能精準抓到 Mac 的 Homebrew 路徑
+    # 3-1. Linux 專屬配置
+    - name: Configure CMake (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+    # 3-2. Windows 專屬配置
+    - name: Configure CMake (Windows)
+      if: matrix.os == 'windows-latest'
+      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+    # 3-3. macOS 專屬配置（只有它需要被餵 Homebrew 路徑）
+    - name: Configure CMake (macOS)
+      if: matrix.os == 'macos-latest'
       env:
-        PKG_CONFIG_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib/pkgconfig:/usr/local/lib/pkgconfig' || '' }}
-        PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin' || env.PATH }}
+        PKG_CONFIG_PATH: /opt/homebrew/lib/pkgconfig:/usr/local/lib/pkgconfig
+        PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
       run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 
     - name: Build Project
