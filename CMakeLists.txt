@@ -60,10 +60,16 @@ if(WIN32)
     endif()
 else()
     # Linux & macOS 透過 PkgConfig 建立的虛擬 target 連結，它會自動把 .h 和 .so/.a 完美綁定
-    target_link_libraries(ytoncmd PRIVATE PkgConfig::FFMPEG)
+    # target_link_libraries(ytoncmd PRIVATE PkgConfig::FFMPEG)
     
-    # 確保本地的 include 與 third_party 也能被類 Unix 系統吃到
-    target_include_directories(ytoncmd PRIVATE include third_party)
+    # # 確保本地的 include 與 third_party 也能被類 Unix 系統吃到
+    # target_include_directories(ytoncmd PRIVATE include third_party)
+    find_package(PkgConfig REQUIRED)
+    if(APPLE)
+        pkg_check_modules(FFMPEG STATIC REQUIRED IMPORTED_TARGET libavformat libavcodec libavutil libswscale libswresample)
+    else()
+        pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET libavformat libavcodec libavutil libswscale libswresample)
+    endif()
 endif()
 
 # ====================================================================
