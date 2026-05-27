@@ -51,18 +51,21 @@ jobs:
 
         Write-Host "=== 解壓靜態 FFmpeg 開發包 ==="
         Expand-Archive -Path "./ffmpeg-download/ffmpeg-static.zip" -DestinationPath "./ffmpeg-download" -Force
-        $ffmpegDir = Get-ChildItem -Directory -Path "./ffmpeg-download" | Where-Object {
-          (Test-Path "$($_.FullName)/include") -and (Test-Path "$($_.FullName)/lib")
+        $ffmpegDir = Get-ChildItem -Directory -Path "./ffmpeg-download" -Recurse | Where-Object {
+          (Test-Path (Join-Path $_.FullName "include")) -and (Test-Path (Join-Path $_.FullName "lib"))
         } | Select-Object -First 1
 
         if (-not $ffmpegDir) {
+          Write-Host "=== 解壓後的目錄清單 ==="
+          Get-ChildItem -Path "./ffmpeg-download" -Directory -Recurse | Select-Object -First 80 FullName
           throw "Cannot find extracted FFmpeg directory containing include/ and lib/."
         }
 
+        Write-Host "Using FFmpeg directory: $($ffmpegDir.FullName)"
         Write-Host "=== 對齊至 CMake 預期的 ffmpeg-static 目錄 ==="
         New-Item -ItemType Directory -Force -Path "./ffmpeg-static"
-        Copy-Item -Path "$($ffmpegDir.FullName)/include" -Destination "./ffmpeg-static/include" -Recurse -Force
-        Copy-Item -Path "$($ffmpegDir.FullName)/lib" -Destination "./ffmpeg-static/lib" -Recurse -Force
+        Copy-Item -Path (Join-Path $ffmpegDir.FullName "include") -Destination "./ffmpeg-static/include" -Recurse -Force
+        Copy-Item -Path (Join-Path $ffmpegDir.FullName "lib") -Destination "./ffmpeg-static/lib" -Recurse -Force
 
         Write-Host "=== 檢查靜態庫 ==="
         Get-ChildItem -Path "./ffmpeg-static/lib" -Filter "*.lib" | Select-Object Name
