@@ -23,35 +23,36 @@ if(WIN32)
         link_directories("${FFMPEG_WIN_DIR}/lib")
         
         # 指定原生 Windows MSVC 點名要連結的標準 .lib 靜態導入庫與系統硬體加速庫
-        set(FFMPEG_WIN_LIBS 
+        set(FFMPEG_WIN_LIBS
+            avformat avcodec avutil swscale swresample
             # 1. FFmpeg 核心五大金剛
-            "${FFMPEG_WIN_DIR}/lib/libavformat.a"
-            "${FFMPEG_WIN_DIR}/lib/libavcodec.a"
-            "${FFMPEG_WIN_DIR}/lib/libavutil.a"
-            "${FFMPEG_WIN_DIR}/lib/libswscale.a"
-            "${FFMPEG_WIN_DIR}/lib/libswresample.a"
+            # "${FFMPEG_WIN_DIR}/lib/libavformat.a"
+            # "${FFMPEG_WIN_DIR}/lib/libavcodec.a"
+            # "${FFMPEG_WIN_DIR}/lib/libavutil.a"
+            # "${FFMPEG_WIN_DIR}/lib/libswscale.a"
+            # "${FFMPEG_WIN_DIR}/lib/libswresample.a"
             
             # 2. 視訊與編碼核心依賴
-            "${FFMPEG_WIN_DIR}/lib/libx264.lib"
-            "${FFMPEG_WIN_DIR}/lib/x265-static.lib"
-            "${FFMPEG_WIN_DIR}/lib/vpxmt.lib"
+            # "${FFMPEG_WIN_DIR}/lib/libx264.lib"
+            # "${FFMPEG_WIN_DIR}/lib/x265-static.lib"
+            # "${FFMPEG_WIN_DIR}/lib/vpxmt.lib"
             
-            # 3. 圖片核心依賴（WebP 系列與 Zlib 壓縮，精確對齊你的 lib 檔名）
-            "${FFMPEG_WIN_DIR}/lib/libwebpmux.lib"
-            "${FFMPEG_WIN_DIR}/lib/libwebpdemux.lib"
-            "${FFMPEG_WIN_DIR}/lib/libwebp.lib"
-            "${FFMPEG_WIN_DIR}/lib/libsharpyuv.lib"
+            # # 3. 圖片核心依賴（WebP 系列與 Zlib 壓縮，精確對齊你的 lib 檔名）
+            # "${FFMPEG_WIN_DIR}/lib/libwebpmux.lib"
+            # "${FFMPEG_WIN_DIR}/lib/libwebpdemux.lib"
+            # "${FFMPEG_WIN_DIR}/lib/libwebp.lib"
+            # "${FFMPEG_WIN_DIR}/lib/libsharpyuv.lib"
             
-            # 4. 💡 關鍵：JXL 系列的拓撲順序（jxl 依賴 cms 和 threads，所以 jxl 要排在最前面！）
-            "${FFMPEG_WIN_DIR}/lib/jxl.lib"
-            "${FFMPEG_WIN_DIR}/lib/jxl_cms.lib"
-            "${FFMPEG_WIN_DIR}/lib/jxl_threads.lib"
-            "${FFMPEG_WIN_DIR}/lib/hwy.lib"
+            # # 4. 💡 關鍵：JXL 系列的拓撲順序（jxl 依賴 cms 和 threads，所以 jxl 要排在最前面！）
+            # "${FFMPEG_WIN_DIR}/lib/jxl.lib"
+            # "${FFMPEG_WIN_DIR}/lib/jxl_cms.lib"
+            # "${FFMPEG_WIN_DIR}/lib/jxl_threads.lib"
+            # "${FFMPEG_WIN_DIR}/lib/hwy.lib"
             
-            # 5. Brotli 傳輸壓縮系列
-            "${FFMPEG_WIN_DIR}/lib/brotlienc.lib"
-            "${FFMPEG_WIN_DIR}/lib/brotlidec.lib"
-            "${FFMPEG_WIN_DIR}/lib/brotlicommon.lib"
+            # # 5. Brotli 傳輸壓縮系列
+            # "${FFMPEG_WIN_DIR}/lib/brotlienc.lib"
+            # "${FFMPEG_WIN_DIR}/lib/brotlidec.lib"
+            # "${FFMPEG_WIN_DIR}/lib/brotlicommon.lib"
             
             # 6. 💡 終極解藥：zlib 必須放在最後面，因為前面所有人（PNG、JXL、FFmpeg）都依賴它！
             "${FFMPEG_WIN_DIR}/lib/zlib.lib"
