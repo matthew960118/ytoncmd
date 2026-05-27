@@ -47,29 +47,27 @@ jobs:
         $output = "ffmpeg.zip"
         $ProgressPreference = 'SilentlyContinue'
         
+        # 1. 下載
         Invoke-WebRequest -Uri $url -OutFile $output
-        Write-Host "✓ Download complete. Extracting files..."
+        Write-Host "✓ Download complete. Extracting..."
         
-        # 1. 先解壓到一個臨時目錄 temp_ffmpeg 裡
-        Expand-Archive -Path $output -DestinationPath "temp_ffmpeg"
+        # 2. 解壓到當前目錄
+        Expand-Archive -Path $output -DestinationPath "."
         
-        # 2. 抓取內層真正的 FFmpeg SDK 目錄 (ffmpeg-8.1.1-full_build)
-        $innerDir = Get-ChildItem -Path "temp_ffmpeg" -Directory -Filter "ffmpeg-*-full_build" | Select-Object -First 1
+        # 3. 💡 物理超渡套娃：既然知道名字固定是 ffmpeg-8.1.1-full_build
+        # 我們直接建立 CMake 要的 ffmpeg-static 資料夾
+        New-Item -Path "." -Name "ffmpeg-static" -ItemType "directory" -Force
         
-        if ($innerDir) {
-            # 3. 建立我們 CMake 點名要的固定根目錄 ffmpeg-static
-            New-Item -Path "." -Name "ffmpeg-static" -ItemType "directory" -Force
-            
-            # 4. 💡 關鍵：把內層資料夾裡面的 bin, include, lib 整個移到 ffmpeg-static 裡
-            Move-Item -Path "$($innerDir.FullName)\*" -Destination ".\ffmpeg-static" -Force
-            Write-Host "✓ Successfully extracted and flattened directory to ffmpeg-static"
-        } else {
-            Throw "Failed to locate inner FFmpeg directory structure!"
-        }
+        Write-Host "Flattening structure: Moving contents from ffmpeg-8.1.1-full_build to ffmpeg-static..."
+        # 直接把內層的所有肉（bin, include, lib）甩進 ffmpeg-static
+        Move-Item -Path ".\ffmpeg-8.1.1-full_build\*" -Destination ".\ffmpeg-static" -Force
         
-        # 5. 清理壓縮包與臨時空目錄
+        # 4. 驗證標頭檔到底在不在！直接在 Log 裡印出來看，這行如果噴錯代表檔案真的不見
+        Get-ChildItem -Path ".\ffmpeg-static\include\libavformat"
+        
+        # 5. 清理垃圾
         Remove-Item $output -Force
-        if (Test-Path "temp_ffmpeg") { Remove-Item "temp_ffmpeg" -Recurse -Force }
+        if (Test-Path ".\ffmpeg-8.1.1-full_build") { Remove-Item ".\ffmpeg-8.1.1-full_build" -Recurse -Force }
     - name: Install Dependencies (macOS)
       if: matrix.os == 'macos-latest'
       run: |
