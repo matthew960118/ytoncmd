@@ -37,7 +37,7 @@ if(WIN32)
             "${FFMPEG_WIN_DIR}/lib/libwebp.lib"
             "${FFMPEG_WIN_DIR}/lib/jxl.lib"
             "${FFMPEG_WIN_DIR}/lib/jxl_threads.lib"
-            "${FFMPEG_WIN_DIR}/lib/libvpx.lib"
+            "${FFMPEG_WIN_DIR}/lib/vpxmt.lib"
             "${FFMPEG_WIN_DIR}/lib/libsharpyuv.lib"
             "${FFMPEG_WIN_DIR}/lib/hwy.lib"
             "${FFMPEG_WIN_DIR}/lib/brotlicommon.lib"
