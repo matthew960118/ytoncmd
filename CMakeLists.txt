@@ -46,6 +46,9 @@ endif()
 # ====================================================================
 file(GLOB SOURCES CONFIGURE_DEPENDS "src/*.cpp" "main.cpp")
 add_executable(ytoncmd ${SOURCES})
+if(WIN32)
+    target_compile_definitions(ytoncmd PRIVATE NOMINMAX)
+endif()
 
 # ====================================================================
 # 3. 現代 Target 屬性設定（標頭檔與連結庫）
