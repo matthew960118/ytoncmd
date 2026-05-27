@@ -187,7 +187,8 @@ bool MediaSource::readAndQueuePacket()
 }
 
 bool MediaSource::decodeAndQueueVideoFrame()
-{
+{   
+    av_log_set_level(AV_LOG_ERROR);
     if (avcodec_send_packet(codec_ctx, pkt) < 0)
         return false;
 
