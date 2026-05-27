@@ -48,20 +48,28 @@ jobs:
         $ProgressPreference = 'SilentlyContinue'
         
         Invoke-WebRequest -Uri $url -OutFile $output
-        Write-Host "✓ Download complete. Extracting files directly..."
+        Write-Host "✓ Download complete. Extracting files..."
         
-        # 💡 大魔法：直接解壓到專案根目錄下
-        Expand-Archive -Path $output -DestinationPath "."
+        # 1. 先解壓到一個臨時目錄 temp_ffmpeg 裡
+        Expand-Archive -Path $output -DestinationPath "temp_ffmpeg"
         
-        # 抓取那個長名字的資料夾，直接一秒改名叫 ffmpeg-static，完全不搬移檔案
-        $extractedDir = Get-ChildItem -Directory -Filter "ffmpeg-*-full_build" | Select-Object -First 1
-        if ($extractedDir) {
-            Rename-Item -Path $extractedDir.FullName -NewName "ffmpeg-static" -Force
-            Write-Host "✓ Successfully established ffmpeg-static directory structure."
+        # 2. 抓取內層真正的 FFmpeg SDK 目錄 (ffmpeg-8.1.1-full_build)
+        $innerDir = Get-ChildItem -Path "temp_ffmpeg" -Directory -Filter "ffmpeg-*-full_build" | Select-Object -First 1
+        
+        if ($innerDir) {
+            # 3. 建立我們 CMake 點名要的固定根目錄 ffmpeg-static
+            New-Item -Path "." -Name "ffmpeg-static" -ItemType "directory" -Force
+            
+            # 4. 💡 關鍵：把內層資料夾裡面的 bin, include, lib 整個移到 ffmpeg-static 裡
+            Move-Item -Path "$($innerDir.FullName)\*" -Destination ".\ffmpeg-static" -Force
+            Write-Host "✓ Successfully extracted and flattened directory to ffmpeg-static"
         } else {
-            Throw "Failed to locate FFmpeg directory structure!"
+            Throw "Failed to locate inner FFmpeg directory structure!"
         }
+        
+        # 5. 清理壓縮包與臨時空目錄
         Remove-Item $output -Force
+        if (Test-Path "temp_ffmpeg") { Remove-Item "temp_ffmpeg" -Recurse -Force }
     - name: Install Dependencies (macOS)
       if: matrix.os == 'macos-latest'
       run: |
