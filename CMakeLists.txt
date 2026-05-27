@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(ytoncmd)
 
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -30,19 +31,30 @@ if(WIN32)
             "${FFMPEG_WIN_DIR}/lib/libswscale.a"
             "${FFMPEG_WIN_DIR}/lib/libswresample.a"
             
-            # 2. System233 同資料夾附帶的次級依賴靜態庫（解決 133 個未解析錯誤）
+            # 2. 視訊與編碼核心依賴
             "${FFMPEG_WIN_DIR}/lib/libx264.lib"
             "${FFMPEG_WIN_DIR}/lib/x265-static.lib"
-            "${FFMPEG_WIN_DIR}/lib/zlib.lib"
-            "${FFMPEG_WIN_DIR}/lib/libwebp.lib"
-            "${FFMPEG_WIN_DIR}/lib/jxl.lib"
-            "${FFMPEG_WIN_DIR}/lib/jxl_threads.lib"
             "${FFMPEG_WIN_DIR}/lib/vpxmt.lib"
+            
+            # 3. 圖片核心依賴（WebP 系列與 Zlib 壓縮，精確對齊你的 lib 檔名）
+            "${FFMPEG_WIN_DIR}/lib/libwebpmux.lib"
+            "${FFMPEG_WIN_DIR}/lib/libwebpdemux.lib"
+            "${FFMPEG_WIN_DIR}/lib/libwebp.lib"
             "${FFMPEG_WIN_DIR}/lib/libsharpyuv.lib"
+            
+            # 4. 💡 關鍵：JXL 系列的拓撲順序（jxl 依賴 cms 和 threads，所以 jxl 要排在最前面！）
+            "${FFMPEG_WIN_DIR}/lib/jxl.lib"
+            "${FFMPEG_WIN_DIR}/lib/jxl_cms.lib"
+            "${FFMPEG_WIN_DIR}/lib/jxl_threads.lib"
             "${FFMPEG_WIN_DIR}/lib/hwy.lib"
-            "${FFMPEG_WIN_DIR}/lib/brotlicommon.lib"
-            "${FFMPEG_WIN_DIR}/lib/brotlidec.lib"
+            
+            # 5. Brotli 傳輸壓縮系列
             "${FFMPEG_WIN_DIR}/lib/brotlienc.lib"
+            "${FFMPEG_WIN_DIR}/lib/brotlidec.lib"
+            "${FFMPEG_WIN_DIR}/lib/brotlicommon.lib"
+            
+            # 6. 💡 終極解藥：zlib 必須放在最後面，因為前面所有人（PNG、JXL、FFmpeg）都依賴它！
+            "${FFMPEG_WIN_DIR}/lib/zlib.lib"
             
             # 3. Windows 原生系統底層必備庫（ws2_32 負責解決通訊、其餘負責硬體加速與安全）
             ws2_32 Bcrypt Secur32 Strmiids Vfw32 Shlwapi Mfuuid
