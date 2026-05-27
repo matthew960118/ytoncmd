@@ -48,15 +48,11 @@ jobs:
     # ----------------------------------------------------
     # 配置與編譯區
     # ----------------------------------------------------
-    - name: Setup CMake
-      uses: jwlawrence/actions-setup-cmake@v1
-      with:
-        cmake-version: 'latest'
     - name: Configure CMake
       # 💡 關鍵：把 env 移到這裡！讓 CMake 執行時能精準抓到 Mac 的 Homebrew 路徑
       env:
-        PKG_CONFIG_PATH: /opt/homebrew/lib/pkgconfig:/usr/local/lib/pkgconfig
-        PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+        PKG_CONFIG_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib/pkgconfig:/usr/local/lib/pkgconfig' || '' }}
+        PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin' || env.PATH }}
       run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 
     - name: Build Project
