@@ -40,10 +40,34 @@ jobs:
         sudo apt install -y pkg-config ffmpeg libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libswresample-dev
     - name: Install Dependencies (Windows)
       if: matrix.os == 'windows-latest'
-      uses: BiniouFF/setup-ffmpeg@v1
-      with:
-        # 💡 強迫抓取包含開發者標頭檔（.h）與靜態庫（.lib）的完全版
-        ffmpeg-version: '7.1'
+      shell: pwsh
+      run: |
+        Write-Host "Downloading FFmpeg Windows Static Build..."
+        # 💡 這是 GyanD 官方永久不變的最新釋出靜態庫網址！
+        $url = "https://github.com/GyanD/codexffmpeg/releases/download/8.1.1/ffmpeg-8.1.1-full_build.zip"
+        $output = "ffmpeg.zip"
+        
+        # 隱藏進度條，下載速度直接飆升 5 倍
+        $ProgressPreference = 'SilentlyContinue'
+        
+        Write-Host "Starting download from gyan.dev..."
+        Invoke-WebRequest -Uri $url -OutFile $output
+        Write-Host "✓ Download complete. Extracting files..."
+        
+        # 解壓縮到當前目錄
+        Expand-Archive -Path $output -DestinationPath .
+        
+        # 自動捕捉解壓出來的資料夾（名字通常是 ffmpeg-7.x.x-full_build）
+        $extractedDir = Get-ChildItem -Directory -Filter "ffmpeg-*-full_build" | Select-Object -First 1
+        if ($extractedDir) {
+            # 強制改名為我們 CMake 認得的固定名稱：ffmpeg-static
+            Rename-Item -Path $extractedDir.FullName -NewName "ffmpeg-static"
+            Write-Host "✓ Successfully extracted and renamed to ffmpeg-static"
+        } else {
+            Throw "Failed to locate extracted FFmpeg directory!"
+        }
+        
+        Remove-Item $output
     - name: Install Dependencies (macOS)
       if: matrix.os == 'macos-latest'
       run: |
