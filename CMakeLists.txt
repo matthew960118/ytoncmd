@@ -23,7 +23,11 @@ if(WIN32)
         
         # 指定原生 Windows MSVC 點名要連結的標準 .lib 靜態導入庫與系統硬體加速庫
         set(FFMPEG_WIN_LIBS 
-            libavformat.a libavcodec.a libavutil.a libswscale.a libswresample.a
+            "${FFMPEG_WIN_DIR}/lib/libavformat.a"
+            "${FFMPEG_WIN_DIR}/lib/libavcodec.a"
+            "${FFMPEG_WIN_DIR}/lib/libavutil.a"
+            "${FFMPEG_WIN_DIR}/lib/libswscale.a"
+            "${FFMPEG_WIN_DIR}/lib/libswresample.a"
             Bcrypt Secur32 Strmiids Vfw32 Shlwapi Mfuuid
         )
     else()
