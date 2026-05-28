@@ -46,6 +46,7 @@ jobs:
         repository: matthew960118/ffmpeg-8.1.1-msvc-x64-static-mt
         ref: main
         path: ffmpeg-static
+        lfs: true
 
     - name: Verify Static FFmpeg package (Windows)
       if: matrix.os == 'windows-latest'
