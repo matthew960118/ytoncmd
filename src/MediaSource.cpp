@@ -11,6 +11,19 @@
 extern "C"
 {
 #include <libavutil/error.h>
+#include <libavutil/pixdesc.h>
+}
+
+static AVPixelFormat selectSoftwarePixelFormat(AVCodecContext *, const AVPixelFormat *pixelFormats)
+{
+    for (const AVPixelFormat *format = pixelFormats; *format != AV_PIX_FMT_NONE; ++format)
+    {
+        const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(*format);
+        if (desc && !(desc->flags & AV_PIX_FMT_FLAG_HWACCEL))
+            return *format;
+    }
+
+    return pixelFormats[0];
 }
 
 MediaSource::MediaSource(const std::string &path, int tw, int th, double r, bool is_stream)
@@ -90,6 +103,7 @@ bool MediaSource::initializeDecoder()
         return false;
     if (avcodec_parameters_to_context(codec_ctx, v_stream->codecpar) < 0)
         return false;
+    codec_ctx->get_format = selectSoftwarePixelFormat;
     if (avcodec_open2(codec_ctx, codec, NULL) < 0)
         return false;
 
@@ -122,13 +136,9 @@ bool MediaSource::initializeDecoder()
     offsetX = (target_w - newW) / 2;
     offsetY = (target_h - newH) / 2;
 
-    sws_ctx = sws_getContext(
-        origW, origH, codec_ctx->pix_fmt,
-        newW, newH, AV_PIX_FMT_RGB24,
-        SWS_BICUBIC, NULL, NULL, NULL);
     frame = av_frame_alloc();
     pkt = av_packet_alloc();
-    if (!sws_ctx || !frame || !pkt)
+    if (!frame || !pkt)
         return false;
 
     if (audio_stream_idx == -1)
@@ -206,9 +216,17 @@ bool MediaSource::decodeAndQueueVideoFrame()
             pts = frame->pts * video_time_base;
         current_video_pts.store(pts);
 
+        sws_ctx = sws_getCachedContext(
+            sws_ctx,
+            frame->width, frame->height, static_cast<AVPixelFormat>(frame->format),
+            newW, newH, AV_PIX_FMT_RGB24,
+            SWS_BICUBIC, NULL, NULL, NULL);
+        if (!sws_ctx)
+            break;
+
         uint8_t *dest[4] = {rgb_buffer.data(), NULL, NULL, NULL};
         int dest_linesize[4] = {newW * 3, 0, 0, 0};
-        sws_scale(sws_ctx, frame->data, frame->linesize, 0, codec_ctx->height, dest, dest_linesize);
+        sws_scale(sws_ctx, frame->data, frame->linesize, 0, frame->height, dest, dest_linesize);
 
         VideoFrame out;
         out.pts = pts;
