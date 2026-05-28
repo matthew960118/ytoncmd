@@ -15,7 +15,7 @@ void printHelp() {
     std::cout << "  -h, --help              顯示此幫助訊息並退出\n";
     std::cout << "  -W, --width <width>     指定渲染寬度 (預設: 自動適應終端機寬度)\n";
     std::cout << "  -H, --height <height>   指定渲染高度 (預設: 自動適應終端機高度)\n";
-    std::cout << "  -r, --cell-ratio <val>  指定字元寬高比 (寬/高，預設: 0.47，適用 9/19 字體)\n";
+    std::cout << "  -r, --cell-ratio <val>  指定字元寬高比 (寬/高，預設: 0.94(18/19)，適用 9/19 字體(字體的上半為一像素))\n";
     std::cout << "  -o, --output <path>     指定圖片 ANSI 輸出路徑\n";
     std::cout << "  -v, --volume <value>    指定播放音量倍率，0.0 靜音，1.0 原音量，2.0 最大\n";
     std::cout << "  --audio-delay <sec>     音訊延遲補償；正數代表聲音慢，會延後畫面\n\n";

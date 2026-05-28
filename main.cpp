@@ -55,7 +55,7 @@ FILETYPE testFileType(std::string &s)
 
 double parseCellRatio(const std::string& str) {
     // 預設值，以防解析完全失敗
-    double default_ratio = 9.0 / 19.0; 
+    double default_ratio = 18.0 / 19.0; 
 
     // 尋找有沒有斜線 '/'
     size_t slash_pos = str.find('/');
@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
     bool hasPath = false;
     float volume = 1.0f;
     double audioDelay = 0.0;
-    double cell_ratio = 9.0 / 19.0;
+    double cell_ratio = 18.0 / 19.0;
 
     for (int i = 2; i < argc; ++i)
     {
