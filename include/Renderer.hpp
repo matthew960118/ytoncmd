@@ -13,6 +13,9 @@ class Renderer {
 private:
     int width, height;
     std::vector<Color> last_frame;
+    Color last_terminal_color;
+    bool has_terminal_color = false;
+    int last_terminal_y = 0, last_terminal_x = 0;
     std::string buffer;
     bool first_frame = true;
 

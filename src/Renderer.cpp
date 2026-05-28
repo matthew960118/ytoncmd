@@ -77,6 +77,26 @@ Renderer::Renderer(int w, int h) : width(w), height(h)
     buffer.reserve(w * h * 32);
 }
 
+static inline void appendNumToBuf(std::string& buf, int val) 
+{
+    if (val == 0) {
+        buf.push_back('0');
+        return;
+    }
+    
+    char local_buf[12];
+    int i = 12;
+    
+    // 從個位數開始往前逆向填入數值
+    while (val > 0) {
+        local_buf[--i] = static_cast<char>('0' + (val % 10));
+        val /= 10;
+    }
+    
+    // 一次性把整段字串加進 buffer
+    buf.append(local_buf + i, 12 - i);
+}
+
 void Renderer::render(const std::vector<Color> &current_frame)
 {
     if (current_frame.size() < last_frame.size())
@@ -95,9 +115,49 @@ void Renderer::render(const std::vector<Color> &current_frame)
 
             if (first_frame || c.r != l.r || c.g != l.g || c.b != l.b)
             {
-                buffer += "\033[" + std::to_string(y + 1) + ";" + std::to_string(x + 1) + "H";
-                buffer += "\033[48;2;" + std::to_string(c.r) + ";" +
-                          std::to_string(c.g) + ";" + std::to_string(c.b) + "m ";
+                // buffer += "\033[" + std::to_string(y + 1) + ";" + std::to_string(x + 1) + "H";
+                // buffer += "\033[48;2;" + std::to_string(c.r) + ";" +
+                //           std::to_string(c.g) + ";" + std::to_string(c.b) + "m ";
+
+                //pos
+                if ( y != last_terminal_y || x != last_terminal_x)
+                {
+                    buffer += "\033[";
+                    appendNumToBuf(buffer, y + 1);
+                    buffer.push_back(';');
+                    appendNumToBuf(buffer, x + 1);
+                    buffer.push_back('H');
+                }
+                //color
+                if (!has_terminal_color || 
+                    c.r != last_terminal_color.r || 
+                    c.g != last_terminal_color.g || 
+                    c.b != last_terminal_color.b)
+                {
+                    buffer += "\033[48;2;";
+                    appendNumToBuf(buffer, c.r);
+                    buffer.push_back(';');
+                    appendNumToBuf(buffer, c.g);
+                    buffer.push_back(';');
+                    appendNumToBuf(buffer, c.b);
+                    buffer.push_back('m');
+                    
+                    last_terminal_color = c;
+                    has_terminal_color = true;
+                }
+                buffer.push_back(' ');
+
+                // 邊界預測更新
+                if (x == width - 1) 
+                {
+                    last_terminal_y = y + 1;
+                    last_terminal_x = 0;
+                }
+                else 
+                {
+                    last_terminal_y = y;
+                    last_terminal_x = x + 1;
+                }
             }
         }
     }
