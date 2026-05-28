@@ -151,9 +151,13 @@ if(WIN32)
         if(NOT EXISTS "${FFMPEG_WIN_BIN_DIR}")
             message(FATAL_ERROR "Windows shared FFmpeg bin directory not found: ${FFMPEG_WIN_BIN_DIR}")
         endif()
+        file(GLOB FFMPEG_WIN_DLLS CONFIGURE_DEPENDS "${FFMPEG_WIN_BIN_DIR}/*.dll")
+        if(NOT FFMPEG_WIN_DLLS)
+            message(FATAL_ERROR "Windows shared FFmpeg DLLs not found under: ${FFMPEG_WIN_BIN_DIR}")
+        endif()
         add_custom_command(TARGET ytoncmd POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:ytoncmd>"
-            COMMAND ${CMAKE_COMMAND} -E copy_directory "${FFMPEG_WIN_BIN_DIR}" "$<TARGET_FILE_DIR:ytoncmd>"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${FFMPEG_WIN_DLLS} "$<TARGET_FILE_DIR:ytoncmd>"
             COMMENT "Copying Windows FFmpeg shared DLLs to output directory..."
         )
     endif()
