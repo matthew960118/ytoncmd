@@ -10,7 +10,7 @@ project(ytoncmd)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(VERSION_STR "v1.1")
+set(VERSION_STR "v1.2")
 
 # ====================================================================
 # 1. FFmpeg 依賴偵測區（區分 Windows 與 類Unix 系統）
