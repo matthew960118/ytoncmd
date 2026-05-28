@@ -6,7 +6,11 @@ CMakefiles/
 Makefile
 cmake_install.cmake
 install_manifest.txt
-
+package/
+ffmpeg-download/
+ffmpeg-shared/
+ffmpeg-8.1.1-full_build-shared/
+ffmpeg-8.1.1-msvc-x64-static-mt/
 ffmpeg-*/
 *.zip
 *.tar.gz

@@ -91,8 +91,25 @@ if(WIN32)
             user32 advapi32 gdi32 shell32 Crypt32 Normaliz Version Userenv
         )
     else()
-        message(STATUS "Detected Windows Cross-Compilation (MinGW). Using environment variables.")
-        include_directories(include third_party)
+        message(STATUS "Detected Windows Cross-Compilation (MinGW). Setting up SHARED FFmpeg paths.")
+        if(NOT FFMPEG_WIN_DIR)
+            set(FFMPEG_WIN_DIR "${CMAKE_SOURCE_DIR}/ffmpeg-8.1.1-full_build-shared" CACHE PATH "Path to a Windows/MinGW shared FFmpeg SDK")
+        endif()
+        message(STATUS "Using Windows FFmpeg directory: ${FFMPEG_WIN_DIR}")
+
+        if(NOT EXISTS "${FFMPEG_WIN_DIR}/include" OR NOT EXISTS "${FFMPEG_WIN_DIR}/lib")
+            message(FATAL_ERROR "Windows FFmpeg package not found. Expected include/ and lib/ under: ${FFMPEG_WIN_DIR}")
+        endif()
+
+        if(NOT FFMPEG_LIBRARIES)
+            set(FFMPEG_LIBRARIES avformat avcodec avutil swscale swresample)
+        endif()
+
+        link_directories("${FFMPEG_WIN_DIR}/lib")
+        set(FFMPEG_WIN_SYSTEM_LIBS
+            ws2_32 bcrypt secur32 ncrypt strmiids vfw32 shlwapi mfuuid d3d11 dxva2 ole32
+            user32 advapi32 gdi32 shell32 crypt32 normaliz version userenv
+        )
     endif()
 else()
     # 類 Unix 系統分流：Linux 絕對不碰 STATIC 關鍵字
@@ -132,7 +149,8 @@ if(WIN32)
         target_include_directories(ytoncmd PRIVATE include third_party "${FFMPEG_WIN_DIR}/include")
         target_link_libraries(ytoncmd PRIVATE ${FFMPEG_WIN_LIBS} ${FFMPEG_WIN_SYSTEM_LIBS})
     else()
-        target_link_libraries(ytoncmd PRIVATE ${FFMPEG_LIBRARIES})
+        target_include_directories(ytoncmd PRIVATE include third_party "${FFMPEG_WIN_DIR}/include")
+        target_link_libraries(ytoncmd PRIVATE ${FFMPEG_LIBRARIES} ${FFMPEG_WIN_SYSTEM_LIBS})
     endif()
 else()
     # Linux & macOS 統一使用 PkgConfig 的虛擬 target，並且吃本地的 include 夾
@@ -146,7 +164,7 @@ endif()
 if(WIN32)
     set(WIN_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/build_win/ytoncmd-win-${VERSION_STR}")
     set_target_properties(ytoncmd PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${WIN_OUTPUT_DIR}")
-    if(MSVC AND NOT YTONCMD_WINDOWS_STATIC_FFMPEG)
+    if(NOT YTONCMD_WINDOWS_STATIC_FFMPEG)
         set(FFMPEG_WIN_BIN_DIR "${FFMPEG_WIN_DIR}/bin")
         if(NOT EXISTS "${FFMPEG_WIN_BIN_DIR}")
             message(FATAL_ERROR "Windows shared FFmpeg bin directory not found: ${FFMPEG_WIN_BIN_DIR}")
