@@ -39,37 +39,41 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y pkg-config ffmpeg libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libswresample-dev
-    - name: Download Static FFmpeg package (Windows)
+    - name: Download Shared FFmpeg package (Windows)
       if: matrix.os == 'windows-latest'
       shell: pwsh
       run: |
-        Write-Host "=== 下載 Windows/MSVC 靜態 FFmpeg 開發包 ==="
+        Write-Host "=== 下載 Windows/MSVC FFmpeg 8.1.1 full shared 開發包 ==="
         New-Item -ItemType Directory -Force -Path "./ffmpeg-download"
 
-        $url = "https://github.com/System233/ffmpeg-msvc-prebuilt/releases/download/n7.1-241205/ffmpeg-n7.1-241205-gpl-amd64-static.zip"
-        Invoke-WebRequest -Uri $url -OutFile "./ffmpeg-download/ffmpeg-static.zip"
+        $url = "https://www.gyan.dev/ffmpeg/builds/packages/ffmpeg-8.1.1-full_build-shared.7z"
+        Invoke-WebRequest -Uri $url -OutFile "./ffmpeg-download/ffmpeg-shared.7z"
 
-        Write-Host "=== 解壓靜態 FFmpeg 開發包 ==="
-        Expand-Archive -Path "./ffmpeg-download/ffmpeg-static.zip" -DestinationPath "./ffmpeg-download" -Force
+        Write-Host "=== 解壓 FFmpeg shared 開發包 ==="
+        7z x "./ffmpeg-download/ffmpeg-shared.7z" -o"./ffmpeg-download" -y
         $ffmpegRoot = Get-Item -Path "./ffmpeg-download"
         $ffmpegDir = @($ffmpegRoot) + @(Get-ChildItem -Directory -Path "./ffmpeg-download" -Recurse) | Where-Object {
-          (Test-Path (Join-Path $_.FullName "include")) -and (Test-Path (Join-Path $_.FullName "lib"))
+          (Test-Path (Join-Path $_.FullName "include")) -and
+          (Test-Path (Join-Path $_.FullName "lib")) -and
+          (Test-Path (Join-Path $_.FullName "bin"))
         } | Select-Object -First 1
 
         if (-not $ffmpegDir) {
           Write-Host "=== 解壓後的目錄清單 ==="
           Get-ChildItem -Path "./ffmpeg-download" -Directory -Recurse | Select-Object -First 80 FullName
-          throw "Cannot find extracted FFmpeg directory containing include/ and lib/."
+          throw "Cannot find extracted FFmpeg directory containing include/, lib/, and bin/."
         }
 
         Write-Host "Using FFmpeg directory: $($ffmpegDir.FullName)"
-        Write-Host "=== 對齊至 CMake 預期的 ffmpeg-static 目錄 ==="
-        New-Item -ItemType Directory -Force -Path "./ffmpeg-static"
-        Copy-Item -Path (Join-Path $ffmpegDir.FullName "include") -Destination "./ffmpeg-static/include" -Recurse -Force
-        Copy-Item -Path (Join-Path $ffmpegDir.FullName "lib") -Destination "./ffmpeg-static/lib" -Recurse -Force
+        Write-Host "=== 對齊至 CMake 預期的 ffmpeg-shared 目錄 ==="
+        New-Item -ItemType Directory -Force -Path "./ffmpeg-shared"
+        Copy-Item -Path (Join-Path $ffmpegDir.FullName "include") -Destination "./ffmpeg-shared/include" -Recurse -Force
+        Copy-Item -Path (Join-Path $ffmpegDir.FullName "lib") -Destination "./ffmpeg-shared/lib" -Recurse -Force
+        Copy-Item -Path (Join-Path $ffmpegDir.FullName "bin") -Destination "./ffmpeg-shared/bin" -Recurse -Force
 
-        Write-Host "=== 檢查靜態庫 ==="
-        Get-ChildItem -Path "./ffmpeg-static/lib" -Filter "*.lib" | Select-Object Name
+        Write-Host "=== 檢查 import libraries 與 DLL ==="
+        Get-ChildItem -Path "./ffmpeg-shared/lib" -Filter "*.lib" | Select-Object Name
+        Get-ChildItem -Path "./ffmpeg-shared/bin" -Filter "*.dll" | Select-Object Name
     - name: Install Dependencies (macOS)
       if: matrix.os == 'macos-latest'
       run: |

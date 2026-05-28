@@ -126,7 +126,6 @@ bool StreamSource::openPipe()
 #ifdef _WIN32
     std::remove(kWindowsCacheFile);
     std::string ytDlpCmd = std::filesystem::exists(kLocalYtDlp) ? ".\\" + kLocalYtDlp : "yt-dlp";
-    // std::string cmd = "start /B " + ytDlpCmd +" -q --no-playlist -f \"b\" --merge-output-format mkv \"" + m_path + "\" -o " + kWindowsCacheFile;
     std::string cmd = "start /B " + ytDlpCmd +" -q --no-playlist --merge-output-format mkv \"" + m_path + "\" -o " + kWindowsCacheFile;
     std::system(cmd.c_str());
 
@@ -139,7 +138,6 @@ bool StreamSource::openPipe()
     }
     return false;
 #else
-    // std::string cmd = "yt-dlp -q --no-playlist -f \"b\" --merge-output-format mkv -o - \"" + m_path + "\"";
     std::string cmd = "yt-dlp -q --no-playlist --merge-output-format mkv -o - \"" + m_path + "\"";
     m_pipe_handle = popen(cmd.c_str(), "r");
     return m_pipe_handle != nullptr;
@@ -195,4 +193,3 @@ bool StreamSource::open(const std::string& path)
 
     return true;
 }
-
