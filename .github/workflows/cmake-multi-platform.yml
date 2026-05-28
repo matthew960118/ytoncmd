@@ -1,5 +1,8 @@
 name: CMake Multi-Platform Release Auto-Packager
 
+env:
+  VERSION_STR: v1.1
+
 # 觸發條件：當你建立並發布了一個新的 Release
 on:
   release:
@@ -22,11 +25,11 @@ jobs:
         os: [ubuntu-latest, windows-latest]
         include:
           - os: ubuntu-latest
-            artifact_name: ytoncmd-linux
+            platform_name: linux
           # - os: macos-latest
-          #   artifact_name: ytoncmd-macos
+          #   platform_name: macos
           - os: windows-latest
-            artifact_name: ytoncmd-windows.exe
+            platform_name: windows
 
     steps:
     - uses: actions/checkout@v4
@@ -116,6 +119,21 @@ jobs:
     - name: Build Project
       run: cmake --build build --config Release
 
+    - name: Prepare Artifact Package (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        package_dir="package/ytoncmd-${VERSION_STR}-${{ matrix.platform_name }}"
+        mkdir -p "$package_dir"
+        cp "build/ytoncmd-linux-${VERSION_STR}/ytoncmd" "$package_dir/"
+
+    - name: Prepare Artifact Package (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        $packageDir = "package/ytoncmd-${env:VERSION_STR}-${{ matrix.platform_name }}"
+        New-Item -ItemType Directory -Force -Path $packageDir | Out-Null
+        Copy-Item -Path "build_win/ytoncmd-win-${env:VERSION_STR}/Release/*" -Destination $packageDir -Recurse -Force
+
     # ----------------------------------------------------
     # 自動上傳附件到你的 Release 頁面
     # ----------------------------------------------------
@@ -131,9 +149,6 @@ jobs:
     - name: Upload Artifacts for Testing
       uses: actions/upload-artifact@v4
       with:
-        name: ytoncmd-${{ matrix.os }}
-        path: |
-          build_win/ytoncmd-win-v1.1/Release/**
-          build/ytoncmd-macos-v1.1/ytoncmd
-          build/ytoncmd-linux-v1.1/ytoncmd
+        name: ytoncmd-${{ env.VERSION_STR }}-${{ matrix.platform_name }}
+        path: package/*
         if-no-files-found: ignore
