@@ -248,7 +248,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    Renderer renderer(size.width, size.height);
+    Renderer renderer(size.width, size.height*2);
 
     if (ftype == FILETYPE::INVALID)
     {
@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
     }
     if (ftype == FILETYPE::IMAGE)
     {
-        ImageSource img_src(path, size.width, size.height);
+        ImageSource img_src(path, size.width, size.height*2, cell_ratio);
         if (!img_src.isLoaded())
             return 1;
 
@@ -271,12 +271,12 @@ int main(int argc, char *argv[])
     }
     if (ftype == FILETYPE::VIDEO)
     {
-        g_src_ptr = new VideoSource(path, size.width, size.height, cell_ratio);
+        g_src_ptr = new VideoSource(path, size.width, size.height*2, cell_ratio);
     }
     else if (ftype == FILETYPE::URL)
     {
         std::cout << "[ytoncmd] 正在透過串流技術接管影片數據...\n";
-        g_src_ptr = new StreamSource(path, size.width, size.height, cell_ratio);
+        g_src_ptr = new StreamSource(path, size.width, size.height*2, cell_ratio);
     }
 
     

@@ -1,7 +1,7 @@
 name: CMake Multi-Platform Release Auto-Packager
 
 env:
-  VERSION_STR: v1.2
+  VERSION_STR: v1.3
 
 # 觸發條件：當你建立並發布了一個新的 Release
 on:

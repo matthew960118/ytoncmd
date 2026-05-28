@@ -2,7 +2,7 @@
 
 void printHelp() {
     std::cout << "======================================================================\n";
-    std::cout << "  ytoncmd - YouTube / Video or Image to Command Line Renderer (v1.0.0)\n";
+    std::cout << "  ytoncmd - YouTube / Video or Image to Command Line Renderer (v1.3.0)\n";
     std::cout << "======================================================================\n\n";
     
     std::cout << "USAGE:\n";

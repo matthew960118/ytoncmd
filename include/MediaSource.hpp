@@ -65,7 +65,7 @@ protected:
 
     double fps = 30.0;
     int target_w, target_h;
-    double ratio = 9.0/19.0;
+    double ratio;
     int newW = 0, newH = 0;
     int offsetX = 0, offsetY = 0;
 

@@ -6,8 +6,8 @@
 #include <algorithm>
 #include <iostream>
 
-ImageSource::ImageSource(const std::string &img_path, int tw, int th)
-    : path(img_path), target_w(tw), target_h(th)
+ImageSource::ImageSource(const std::string &img_path, int tw, int th, double r)
+    : path(img_path), target_w(tw), target_h(th), ratio(r)
 {
     data = stbi_load(path.c_str(), &width, &height, &channels, 3);
     loaded = data != nullptr && width > 0 && height > 0 && target_w > 0 && target_h > 0;
@@ -34,13 +34,13 @@ std::vector<Color> ImageSource::getPixels() const
     if (!loaded)
         return pixels;
 
-    float fontW = 9.0f, fontH = 19.0f;
+    // float fontW = 9.0f, fontH = 19.0f;
     float scaleX = static_cast<float>(target_w) / width;
-    float scaleY = static_cast<float>(target_h) / (height * (fontW / fontH));
+    float scaleY = static_cast<float>(target_h) / (height * ratio);
     float scale = std::min(scaleX, scaleY);
 
     int newW = std::max(1, static_cast<int>(width * scale));
-    int newH = std::max(1, static_cast<int>(height * scale * (fontW / fontH)));
+    int newH = std::max(1, static_cast<int>(height * scale * ratio));
     newW = std::min(newW, target_w);
     newH = std::min(newH, target_h);
 
