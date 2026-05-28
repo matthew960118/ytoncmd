@@ -1,0 +1,73 @@
+name: Build FFmpeg MSVC Static SDK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build FFmpeg 8.1.1 static SDK with vcpkg
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build FFmpeg static libraries
+      shell: pwsh
+      run: |
+        $vcpkg = "C:\vcpkg\vcpkg.exe"
+        if (-not (Test-Path $vcpkg)) {
+          $vcpkgRoot = Join-Path $env:RUNNER_TEMP "vcpkg"
+          git clone https://github.com/microsoft/vcpkg.git $vcpkgRoot
+          & (Join-Path $vcpkgRoot "bootstrap-vcpkg.bat")
+          $vcpkg = Join-Path $vcpkgRoot "vcpkg.exe"
+        }
+
+        $vcpkgRoot = Split-Path $vcpkg -Parent
+        & $vcpkg version
+
+        $features = "ffmpeg[avcodec,avformat,dav1d,swresample,swscale,zlib,bzip2,iconv]:x64-windows-static"
+        & $vcpkg install $features --clean-after-build
+        if ($LASTEXITCODE -ne 0) {
+          throw "vcpkg failed to build FFmpeg static SDK."
+        }
+
+        $installed = Join-Path $vcpkgRoot "installed\x64-windows-static"
+        if (-not (Test-Path (Join-Path $installed "include")) -or -not (Test-Path (Join-Path $installed "lib"))) {
+          throw "vcpkg install directory is missing include/ or lib/: $installed"
+        }
+
+        New-Item -ItemType Directory -Force -Path "./ffmpeg-static" | Out-Null
+        Copy-Item -Path (Join-Path $installed "include") -Destination "./ffmpeg-static/include" -Recurse -Force
+        Copy-Item -Path (Join-Path $installed "lib") -Destination "./ffmpeg-static/lib" -Recurse -Force
+
+        if (Test-Path (Join-Path $installed "share")) {
+          Copy-Item -Path (Join-Path $installed "share") -Destination "./ffmpeg-static/share" -Recurse -Force
+        }
+
+        Write-Host "=== FFmpeg static SDK libraries ==="
+        Get-ChildItem -Path "./ffmpeg-static/lib" -Filter "*.lib" | Select-Object Name, Length
+
+        foreach ($required in @("avformat.lib", "avcodec.lib", "swscale.lib", "swresample.lib", "avutil.lib", "dav1d.lib")) {
+          $path = Join-Path "./ffmpeg-static/lib" $required
+          if (-not (Test-Path $path)) {
+            throw "Required static library missing: $required"
+          }
+        }
+
+    - name: Configure ytoncmd against static FFmpeg
+      run: cmake -S . -B build-static -DCMAKE_BUILD_TYPE=Release -DYTONCMD_WINDOWS_STATIC_FFMPEG=ON --fresh
+
+    - name: Build ytoncmd static-link test
+      run: cmake --build build-static --config Release
+
+    - name: Upload FFmpeg static SDK
+      uses: actions/upload-artifact@v4
+      with:
+        name: ffmpeg-msvc-static-vcpkg
+        path: ffmpeg-static/**
+
+    - name: Upload ytoncmd static-link test binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: ytoncmd-windows-static-ffmpeg-test
+        path: build_win/ytoncmd-win-v1.1/Release/ytoncmd.exe

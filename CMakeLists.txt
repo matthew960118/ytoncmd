@@ -33,18 +33,36 @@ if(WIN32)
         endif()
 
         if(YTONCMD_WINDOWS_STATIC_FFMPEG)
-            # Static package from:
-            # https://github.com/System233/ffmpeg-msvc-prebuilt/releases/tag/n7.1-241205
-            set(FFMPEG_WIN_LIBS
-                "${FFMPEG_WIN_DIR}/lib/libavformat.a"
-                "${FFMPEG_WIN_DIR}/lib/libavcodec.a"
-                "${FFMPEG_WIN_DIR}/lib/libswscale.a"
-                "${FFMPEG_WIN_DIR}/lib/libswresample.a"
-                "${FFMPEG_WIN_DIR}/lib/libavutil.a"
+            # Supports both System233-style libav*.a archives and vcpkg-style av*.lib archives.
+            set(FFMPEG_WIN_CORE_BASENAMES
+                avformat
+                avcodec
+                swscale
+                swresample
+                avutil
             )
+            foreach(FFMPEG_WIN_CORE_BASENAME IN LISTS FFMPEG_WIN_CORE_BASENAMES)
+                set(FFMPEG_WIN_CORE_LIB_A "${FFMPEG_WIN_DIR}/lib/lib${FFMPEG_WIN_CORE_BASENAME}.a")
+                set(FFMPEG_WIN_CORE_LIB_LIB "${FFMPEG_WIN_DIR}/lib/${FFMPEG_WIN_CORE_BASENAME}.lib")
+                if(EXISTS "${FFMPEG_WIN_CORE_LIB_A}")
+                    list(APPEND FFMPEG_WIN_LIBS "${FFMPEG_WIN_CORE_LIB_A}")
+                elseif(EXISTS "${FFMPEG_WIN_CORE_LIB_LIB}")
+                    list(APPEND FFMPEG_WIN_LIBS "${FFMPEG_WIN_CORE_LIB_LIB}")
+                else()
+                    message(FATAL_ERROR "Required Windows static FFmpeg core library not found for: ${FFMPEG_WIN_CORE_BASENAME}")
+                endif()
+            endforeach()
+
+            set(FFMPEG_WIN_CORE_LIBS ${FFMPEG_WIN_LIBS})
             file(GLOB FFMPEG_WIN_DEP_LIBS CONFIGURE_DEPENDS "${FFMPEG_WIN_DIR}/lib/*.lib")
-            list(APPEND FFMPEG_WIN_LIBS ${FFMPEG_WIN_DEP_LIBS})
-        else()
+            foreach(FFMPEG_WIN_DEP_LIB IN LISTS FFMPEG_WIN_DEP_LIBS)
+                if(NOT FFMPEG_WIN_DEP_LIB IN_LIST FFMPEG_WIN_CORE_LIBS)
+                    list(APPEND FFMPEG_WIN_LIBS "${FFMPEG_WIN_DEP_LIB}")
+                endif()
+            endforeach()
+            unset(FFMPEG_WIN_CORE_LIBS)
+        endif()
+        if(NOT YTONCMD_WINDOWS_STATIC_FFMPEG)
             set(FFMPEG_WIN_LIBS
                 "${FFMPEG_WIN_DIR}/lib/avformat.lib"
                 "${FFMPEG_WIN_DIR}/lib/avcodec.lib"
@@ -61,7 +79,7 @@ if(WIN32)
 
         set(FFMPEG_WIN_SYSTEM_LIBS
             ws2_32 Bcrypt Secur32 Strmiids Vfw32 Shlwapi Mfuuid d3d11 dxva2 ole32
-            user32 advapi32 gdi32 shell32
+            user32 advapi32 gdi32 shell32 Crypt32 Normaliz Version Userenv
         )
     else()
         message(STATUS "Detected Windows Cross-Compilation (MinGW). Using environment variables.")
