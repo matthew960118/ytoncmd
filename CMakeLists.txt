@@ -16,17 +16,26 @@ set(VERSION_STR "v1.1")
 # 1. FFmpeg 依賴偵測區（區分 Windows 與 類Unix 系統）
 # ====================================================================
 
-option(YTONCMD_WINDOWS_STATIC_FFMPEG "Link Windows/MSVC against the experimental static FFmpeg package" OFF)
+option(YTONCMD_WINDOWS_STATIC_FFMPEG "Link Windows/MSVC against a static FFmpeg package" OFF)
+set(YTONCMD_WINDOWS_STATIC_FFMPEG_DIR "" CACHE PATH "Path to a Windows/MSVC static FFmpeg SDK")
 
 if(WIN32)
     if(MSVC)
         if(YTONCMD_WINDOWS_STATIC_FFMPEG)
             message(STATUS "Detected Windows Native MSVC environment. Setting up STATIC FFmpeg paths.")
-            set(FFMPEG_WIN_DIR "${CMAKE_SOURCE_DIR}/ffmpeg-static")
+            set(FFMPEG_WIN_LOCAL_STATIC_DIR "${CMAKE_SOURCE_DIR}/ffmpeg-8.1.1-msvc-x64-static-mt")
+            if(YTONCMD_WINDOWS_STATIC_FFMPEG_DIR)
+                set(FFMPEG_WIN_DIR "${YTONCMD_WINDOWS_STATIC_FFMPEG_DIR}")
+            elseif(EXISTS "${FFMPEG_WIN_LOCAL_STATIC_DIR}/include" AND EXISTS "${FFMPEG_WIN_LOCAL_STATIC_DIR}/lib")
+                set(FFMPEG_WIN_DIR "${FFMPEG_WIN_LOCAL_STATIC_DIR}")
+            else()
+                set(FFMPEG_WIN_DIR "${CMAKE_SOURCE_DIR}/ffmpeg-static")
+            endif()
         else()
             message(STATUS "Detected Windows Native MSVC environment. Setting up SHARED FFmpeg paths.")
             set(FFMPEG_WIN_DIR "${CMAKE_SOURCE_DIR}/ffmpeg-shared")
         endif()
+        message(STATUS "Using Windows FFmpeg directory: ${FFMPEG_WIN_DIR}")
 
         if(NOT EXISTS "${FFMPEG_WIN_DIR}/include" OR NOT EXISTS "${FFMPEG_WIN_DIR}/lib")
             message(FATAL_ERROR "Windows FFmpeg package not found. Expected include/ and lib/ under: ${FFMPEG_WIN_DIR}")
@@ -78,7 +87,7 @@ if(WIN32)
         endforeach()
 
         set(FFMPEG_WIN_SYSTEM_LIBS
-            ws2_32 Bcrypt Secur32 Strmiids Vfw32 Shlwapi Mfuuid d3d11 dxva2 ole32
+            ws2_32 Bcrypt Secur32 Ncrypt Strmiids Vfw32 Shlwapi Mfuuid d3d11 dxva2 ole32
             user32 advapi32 gdi32 shell32 Crypt32 Normaliz Version Userenv
         )
     else()
