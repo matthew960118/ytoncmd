@@ -25,8 +25,30 @@ jobs:
         $vcpkgRoot = Split-Path $vcpkg -Parent
         & $vcpkg version
 
-        $features = "ffmpeg[avcodec,avformat,dav1d,swresample,swscale,zlib,bzip2,iconv]:x64-windows-static"
-        & $vcpkg install $features --clean-after-build
+        @'
+        {
+          "name": "ytoncmd-ffmpeg-static-sdk",
+          "version-string": "0",
+          "dependencies": [
+            {
+              "name": "ffmpeg",
+              "default-features": false,
+              "features": [
+                "avcodec",
+                "avformat",
+                "dav1d",
+                "swresample",
+                "swscale",
+                "zlib",
+                "bzip2",
+                "iconv"
+              ]
+            }
+          ]
+        }
+        '@ | Set-Content -Path "./vcpkg.json" -Encoding utf8
+
+        & $vcpkg install --triplet x64-windows-static --clean-after-build
         if ($LASTEXITCODE -ne 0) {
           throw "vcpkg failed to build FFmpeg static SDK."
         }
