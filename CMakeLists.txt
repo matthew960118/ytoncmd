@@ -169,10 +169,25 @@ if(WIN32)
         if(NOT EXISTS "${FFMPEG_WIN_BIN_DIR}")
             message(FATAL_ERROR "Windows shared FFmpeg bin directory not found: ${FFMPEG_WIN_BIN_DIR}")
         endif()
-        file(GLOB FFMPEG_WIN_DLLS CONFIGURE_DEPENDS "${FFMPEG_WIN_BIN_DIR}/*.dll")
-        if(NOT FFMPEG_WIN_DLLS)
-            message(FATAL_ERROR "Windows shared FFmpeg DLLs not found under: ${FFMPEG_WIN_BIN_DIR}")
-        endif()
+        # file(GLOB FFMPEG_WIN_DLLS CONFIGURE_DEPENDS "${FFMPEG_WIN_BIN_DIR}/*.dll")
+        set(REQUIRED_FFMPEG_DLL_NAMES
+            "avcodec-62.dll"
+            "avformat-62.dll"
+            "avutil-60.dll"
+            "swresample-6.dll"
+            "swscale-9.dll"
+        )
+
+        # 2. 組合出完整的絕對路徑，並驗證檔案是否存在
+        set(FFMPEG_WIN_DLLS "")
+        foreach(DLL_NAME ${REQUIRED_FFMPEG_DLL_NAMES})
+            set(FULL_DLL_PATH "${FFMPEG_WIN_BIN_DIR}/${DLL_NAME}")
+            if(EXISTS "${FULL_DLL_PATH}")
+                list(APPEND FFMPEG_WIN_DLLS "${FULL_DLL_PATH}")
+            else()
+                message(FATAL_ERROR "Required FFmpeg DLL not found: ${FULL_DLL_PATH}")
+            endif()
+        endforeach()
         add_custom_command(TARGET ytoncmd POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:ytoncmd>"
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${FFMPEG_WIN_DLLS} "$<TARGET_FILE_DIR:ytoncmd>"
