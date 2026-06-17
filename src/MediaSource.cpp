@@ -141,6 +141,7 @@ bool MediaSource::initializeDecoder()
     if (!frame || !pkt)
         return false;
 
+    // 處理音效
     if (audio_stream_idx == -1)
         return true;
 
@@ -197,7 +198,7 @@ bool MediaSource::readAndQueuePacket()
 }
 
 bool MediaSource::decodeAndQueueVideoFrame()
-{   
+{
     av_log_set_level(AV_LOG_ERROR);
     if (avcodec_send_packet(codec_ctx, pkt) < 0)
         return false;
@@ -250,7 +251,7 @@ bool MediaSource::decodeAndQueueVideoFrame()
     return queued;
 }
 
-bool MediaSource::popSyncedVideoFrame(std::vector<Color>& canvas)
+bool MediaSource::popSyncedVideoFrame(std::vector<Color> &canvas)
 {
     if (video_queue.empty())
         return false;
@@ -386,7 +387,7 @@ void MediaSource::maAudioCallback(ma_device *pDevice, void *pOutput, const void 
         std::lock_guard<std::mutex> lock(src->audio_mutex);
         while (written < bytesNeeded && !src->audio_queue.empty())
         {
-            AudioChunk& chunk = src->audio_queue.front();
+            AudioChunk &chunk = src->audio_queue.front();
             size_t available = chunk.pcm.size() - chunk.offset;
             size_t toCopy = std::min(bytesNeeded - written, available);
 

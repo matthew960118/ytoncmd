@@ -10,6 +10,7 @@ ImageSource::ImageSource(const std::string &img_path, int tw, int th, double r)
     : path(img_path), target_w(tw), target_h(th), ratio(r)
 {
     data = stbi_load(path.c_str(), &width, &height, &channels, 3);
+    // 檢查是否為正常圖片 與參數是否正常
     loaded = data != nullptr && width > 0 && height > 0 && target_w > 0 && target_h > 0;
 
     if (!loaded)

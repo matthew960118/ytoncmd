@@ -107,7 +107,7 @@ void Renderer::render(const std::vector<Color> &current_frame)
         return;
 
     buffer.clear();
-    buffer += "\033[?2026h"; 
+    buffer += "\033[?2026h";
 
     // ➔ 修正：使用 (height + 1) / 2 進行無條件進位，確保奇數行時最後一行也能跑到
     int terminal_height = (height + 1) / 2;
@@ -120,14 +120,14 @@ void Renderer::render(const std::vector<Color> &current_frame)
             int r_y_down = y * 2 + 1;
 
             int idx_up = r_y_up * width + x;
-            const Color &c2 = current_frame[idx_up];   // 上半部永遠存在
+            const Color &c2 = current_frame[idx_up]; // 上半部永遠存在
             const Color &l2 = last_frame[idx_up];
 
-            // 關鍵安全檢查：判斷下半部是否超界
+            // 判斷下半部是否超界
             bool has_down_pixel = (r_y_down < height);
-            
+
             // 如果下半部存在，正常取值；如果超界（奇數最後一行），下半部當作純黑 {0,0,0}
-            int idx_down = has_down_pixel ? (r_y_down * width + x) : 0;
+            int idx_down = has_down_pixel ? (r_y_down * width + x) : -1;
             Color c1 = has_down_pixel ? current_frame[idx_down] : Color{0, 0, 0};
             Color l1 = has_down_pixel ? last_frame[idx_down] : Color{0, 0, 0};
 
@@ -136,9 +136,9 @@ void Renderer::render(const std::vector<Color> &current_frame)
                 c1.r != l1.r || c1.g != l1.g || c1.b != l1.b ||
                 c2.r != l2.r || c2.g != l2.g || c2.b != l2.b)
             {
-                int terminal_y = y + 1; 
-                
-                // 1. 檢查游標定位
+                int terminal_y = y + 1;
+
+                // 檢查游標定位
                 if (terminal_y != last_terminal_y || x != last_terminal_x)
                 {
                     buffer += "\033[";
@@ -148,7 +148,7 @@ void Renderer::render(const std::vector<Color> &current_frame)
                     buffer.push_back('H');
                 }
 
-                // 2. 處理下半部像素 c1 背景色 (48)
+                // 處理下半部像素 c1 背景色 (48)
                 if (has_down_pixel)
                 {
                     if (!has_terminal_color ||
@@ -171,17 +171,17 @@ void Renderer::render(const std::vector<Color> &current_frame)
                 {
                     // 奇數邊界處理：如果沒有下半部像素，將終端機背景色重設為預設（通常是黑色）
                     // 避免受到上一次殘留背景色的污染
-                    buffer += "\033[49m"; 
+                    buffer += "\033[49m";
                     last_terminal_color_down = {0, 0, 0}; // 重設快取
                 }
 
-                // 3. 處理上半部像素 c2 前景色 (38)
+                // 處理上半部像素 c2 前景色 (38)
                 if (!has_terminal_color ||
                     c2.r != last_terminal_color_up.r ||
                     c2.g != last_terminal_color_up.g ||
                     c2.b != last_terminal_color_up.b)
                 {
-                    buffer += "\033[38;2;"; 
+                    buffer += "\033[38;2;";
                     appendNumToBuf(buffer, c2.r);
                     buffer.push_back(';');
                     appendNumToBuf(buffer, c2.g);
@@ -189,15 +189,15 @@ void Renderer::render(const std::vector<Color> &current_frame)
                     appendNumToBuf(buffer, c2.b);
                     buffer.push_back('m');
 
-                    last_terminal_color_up = c2; 
+                    last_terminal_color_up = c2;
                 }
 
                 has_terminal_color = true;
 
-                // 4. 輸出半塊字元
+                // 輸出半塊字元
                 buffer += "▀";
 
-                // 5. 虛擬游標邊界預測更新
+                // 游標邊界預測更新
                 if (x == width - 1)
                 {
                     last_terminal_y = terminal_y + 1;
@@ -211,7 +211,7 @@ void Renderer::render(const std::vector<Color> &current_frame)
             }
         }
     }
-    
+
     buffer += "\033[?2026l";
 
     if (buffer.size() > 16)
@@ -219,7 +219,7 @@ void Renderer::render(const std::vector<Color> &current_frame)
         fwrite(buffer.data(), 1, buffer.size(), stdout);
         fflush(stdout);
     }
-    
+
     last_frame = current_frame;
     first_frame = false;
 }
@@ -248,6 +248,129 @@ void Renderer::save(const char *path, const std::vector<Color> &current_frame)
         buffer += "\n";
     }
     buffer += "\033[0m";
+    fwrite(buffer.c_str(), 1, buffer.size(), file);
+    fclose(file);
+}
+
+void Renderer::save(const char *path, const std::vector<Color> &current_frame)
+{
+    if (current_frame.size() < last_frame.size())
+        return;
+
+    FILE *file = fopen(path, "wb");
+    if (file == NULL)
+    {
+        perror("無法創建或打開檔案");
+        return;
+    }
+
+    buffer.clear();
+    buffer += "\033[?2026h";
+
+    // ➔ 修正：使用 (height + 1) / 2 進行無條件進位，確保奇數行時最後一行也能跑到
+    int terminal_height = (height + 1) / 2;
+
+    for (int y = 0; y < terminal_height; ++y)
+    {
+        for (int x = 0; x < width; ++x)
+        {
+            int r_y_up = y * 2;
+            int r_y_down = y * 2 + 1;
+
+            int idx_up = r_y_up * width + x;
+            const Color &c2 = current_frame[idx_up]; // 上半部永遠存在
+            const Color &l2 = last_frame[idx_up];
+
+            // 判斷下半部是否超界
+            bool has_down_pixel = (r_y_down < height);
+
+            // 如果下半部存在，正常取值；如果超界（奇數最後一行），下半部當作純黑 {0,0,0}
+            int idx_down = has_down_pixel ? (r_y_down * width + x) : -1;
+            Color c1 = has_down_pixel ? current_frame[idx_down] : Color{0, 0, 0};
+            Color l1 = has_down_pixel ? last_frame[idx_down] : Color{0, 0, 0};
+
+            // 只要上下任一像素有變動，這一個字元格子就需要重畫
+            if (first_frame ||
+                c1.r != l1.r || c1.g != l1.g || c1.b != l1.b ||
+                c2.r != l2.r || c2.g != l2.g || c2.b != l2.b)
+            {
+                int terminal_y = y + 1;
+
+                // 檢查游標定位
+                if (terminal_y != last_terminal_y || x != last_terminal_x)
+                {
+                    buffer += "\033[";
+                    appendNumToBuf(buffer, terminal_y);
+                    buffer.push_back(';');
+                    appendNumToBuf(buffer, x + 1);
+                    buffer.push_back('H');
+                }
+
+                // 處理下半部像素 c1 背景色 (48)
+                if (has_down_pixel)
+                {
+                    if (!has_terminal_color ||
+                        c1.r != last_terminal_color_down.r ||
+                        c1.g != last_terminal_color_down.g ||
+                        c1.b != last_terminal_color_down.b)
+                    {
+                        buffer += "\033[48;2;";
+                        appendNumToBuf(buffer, c1.r);
+                        buffer.push_back(';');
+                        appendNumToBuf(buffer, c1.g);
+                        buffer.push_back(';');
+                        appendNumToBuf(buffer, c1.b);
+                        buffer.push_back('m');
+
+                        last_terminal_color_down = c1;
+                    }
+                }
+                else
+                {
+                    // 奇數邊界處理：如果沒有下半部像素，將終端機背景色重設為預設（通常是黑色）
+                    // 避免受到上一次殘留背景色的污染
+                    buffer += "\033[49m";
+                    last_terminal_color_down = {0, 0, 0}; // 重設快取
+                }
+
+                // 處理上半部像素 c2 前景色 (38)
+                if (!has_terminal_color ||
+                    c2.r != last_terminal_color_up.r ||
+                    c2.g != last_terminal_color_up.g ||
+                    c2.b != last_terminal_color_up.b)
+                {
+                    buffer += "\033[38;2;";
+                    appendNumToBuf(buffer, c2.r);
+                    buffer.push_back(';');
+                    appendNumToBuf(buffer, c2.g);
+                    buffer.push_back(';');
+                    appendNumToBuf(buffer, c2.b);
+                    buffer.push_back('m');
+
+                    last_terminal_color_up = c2;
+                }
+
+                has_terminal_color = true;
+
+                // 輸出半塊字元
+                buffer += "▀";
+
+                // 游標邊界預測更新
+                if (x == width - 1)
+                {
+                    last_terminal_y = terminal_y + 1;
+                    last_terminal_x = 0;
+                }
+                else
+                {
+                    last_terminal_y = terminal_y;
+                    last_terminal_x = x + 1;
+                }
+            }
+        }
+    }
+
+    buffer += "\033[?2026l";
     fwrite(buffer.c_str(), 1, buffer.size(), file);
     fclose(file);
 }
