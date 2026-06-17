@@ -223,34 +223,34 @@ void Renderer::render(const std::vector<Color> &current_frame)
     last_frame = current_frame;
     first_frame = false;
 }
-void Renderer::save(const char *path, const std::vector<Color> &current_frame)
-{
-    if (current_frame.size() < last_frame.size())
-        return;
+// void Renderer::save(const char *path, const std::vector<Color> &current_frame)
+// {
+//     if (current_frame.size() < last_frame.size())
+//         return;
 
-    buffer.clear();
-    FILE *file = fopen(path, "wb");
-    if (file == NULL)
-    {
-        perror("無法創建或打開檔案");
-        return;
-    }
+//     buffer.clear();
+//     FILE *file = fopen(path, "wb");
+//     if (file == NULL)
+//     {
+//         perror("無法創建或打開檔案");
+//         return;
+//     }
 
-    for (int y = 0; y < height; ++y)
-    {
-        for (int x = 0; x < width; ++x)
-        {
-            int idx = y * width + x;
-            const Color &c = current_frame[idx];
-            buffer += "\033[48;2;" + std::to_string(c.r) + ";" +
-                      std::to_string(c.g) + ";" + std::to_string(c.b) + "m ";
-        }
-        buffer += "\n";
-    }
-    buffer += "\033[0m";
-    fwrite(buffer.c_str(), 1, buffer.size(), file);
-    fclose(file);
-}
+//     for (int y = 0; y < height; ++y)
+//     {
+//         for (int x = 0; x < width; ++x)
+//         {
+//             int idx = y * width + x;
+//             const Color &c = current_frame[idx];
+//             buffer += "\033[48;2;" + std::to_string(c.r) + ";" +
+//                       std::to_string(c.g) + ";" + std::to_string(c.b) + "m ";
+//         }
+//         buffer += "\n";
+//     }
+//     buffer += "\033[0m";
+//     fwrite(buffer.c_str(), 1, buffer.size(), file);
+//     fclose(file);
+// }
 
 void Renderer::save(const char *path, const std::vector<Color> &current_frame)
 {

@@ -31,8 +31,6 @@ enum class FILETYPE
     INVALID
 };
 
-
-
 FILETYPE testFileType(std::string &s)
 {
     if (s.rfind("http://", 0) == 0 || s.rfind("https://", 0) == 0)
@@ -53,32 +51,39 @@ FILETYPE testFileType(std::string &s)
     return FILETYPE::INVALID;
 }
 
-double parseCellRatio(const std::string& str) {
+double parseCellRatio(const std::string &str)
+{
     // 預設值，以防解析完全失敗
-    double default_ratio = 18.0 / 19.0; 
+    double default_ratio = 18.0 / 19.0;
 
     // 尋找有沒有斜線 '/'
     size_t slash_pos = str.find('/');
-    
-    try {
-        if (slash_pos != std::string::npos) {
+
+    try
+    {
+        if (slash_pos != std::string::npos)
+        {
             // 情況 A：格式是 "9/19"
             std::string num_str = str.substr(0, slash_pos);
             std::string den_str = str.substr(slash_pos + 1);
-            
+
             double numerator = std::stod(num_str);   // 分子
             double denominator = std::stod(den_str); // 分母
-            
-            if (denominator == 0) {
+
+            if (denominator == 0)
+            {
                 throw std::runtime_error("分母不能為 0");
             }
             return numerator / denominator;
-        } else {
+        }
+        else
+        {
             // 情況 B：格式是普通的 "0.47"
             return std::stod(str);
         }
     }
-    catch (const std::exception& e) {
+    catch (const std::exception &e)
+    {
         std::cerr << "[警告] 比例參數 \"" << str << "\" 格式錯誤，將沿用預設值 (9/19)。\n";
         return default_ratio;
     }
@@ -104,7 +109,7 @@ TerminalSize getTerminalSize()
 
 void printHelp();
 
-MediaSource* g_src_ptr = nullptr;
+MediaSource *g_src_ptr = nullptr;
 volatile std::sig_atomic_t g_interrupted = 0;
 
 void signalHandler(int signum)
@@ -195,13 +200,14 @@ int main(int argc, char *argv[])
             {
                 volume = std::stof(argv[++i]);
             }
-            catch (const std::exception&)
+            catch (const std::exception &)
             {
                 std::cerr << "Error: volume must be a number from 0.0 to 2.0" << std::endl;
                 return 1;
             }
         }
-        else if ((arg == "-r" || arg == "--cell-ratio") && i + 1 < argc) {
+        else if ((arg == "-r" || arg == "--cell-ratio") && i + 1 < argc)
+        {
             std::string ratio_arg = argv[++i]; // 抓取下一個參數，例如 "9/19"
             cell_ratio = parseCellRatio(ratio_arg);
         }
@@ -216,7 +222,7 @@ int main(int argc, char *argv[])
             {
                 audioDelay = std::stod(argv[++i]);
             }
-            catch (const std::exception&)
+            catch (const std::exception &)
             {
                 std::cerr << "Error: audio-delay must be a number from -1.0 to 1.0" << std::endl;
                 return 1;
@@ -248,7 +254,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    Renderer renderer(size.width, size.height*2);
+    Renderer renderer(size.width, size.height * 2);
 
     if (ftype == FILETYPE::INVALID)
     {
@@ -257,7 +263,7 @@ int main(int argc, char *argv[])
     }
     if (ftype == FILETYPE::IMAGE)
     {
-        ImageSource img_src(path, size.width, size.height*2, cell_ratio);
+        ImageSource img_src(path, size.width, size.height * 2, cell_ratio);
         if (!img_src.isLoaded())
             return 1;
 
@@ -271,15 +277,14 @@ int main(int argc, char *argv[])
     }
     if (ftype == FILETYPE::VIDEO)
     {
-        g_src_ptr = new VideoSource(path, size.width, size.height*2, cell_ratio);
+        g_src_ptr = new VideoSource(path, size.width, size.height * 2, cell_ratio);
     }
     else if (ftype == FILETYPE::URL)
     {
         std::cout << "[ytoncmd] 正在透過串流技術接管影片數據...\n";
-        g_src_ptr = new StreamSource(path, size.width, size.height*2, cell_ratio);
+        g_src_ptr = new StreamSource(path, size.width, size.height * 2, cell_ratio);
     }
 
-    
     if (g_src_ptr != nullptr)
     {
         g_src_ptr->setVolume(volume);
